@@ -14,4 +14,5 @@
 - [ ] Changing the core Monolithic Architecture — The React/Inertia/Laravel base remains intact; modifications are focused on the AI orchestration logic.
 
 ## Traceability
-*(To be populated during roadmap generation)*
+- **CHAT-01** → Phase 1: IPC Discernment
+- **CHAT-02** → Phase 2: Dynamic Persona Stream

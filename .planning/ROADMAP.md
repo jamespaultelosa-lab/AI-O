@@ -1,0 +1,28 @@
+# Roadmap
+
+## Phase 1: IPC Discernment
+**Goal:** Intercept incoming tasks and categorize them correctly as casual chat or actionable workflows.
+**Mode:** mvp
+
+**Requirements:**
+- CHAT-01
+
+**Success Criteria:**
+1. System receives a "hello" message and triggers casual response mode (bypassing full task execution).
+2. System receives a "make a new button" message and triggers the full actionable task workflow.
+
+---
+
+## Phase 2: Dynamic Persona Stream
+**Goal:** Generate unscripted, dynamic dialogue between distinct AI personas prior to executing an actionable task.
+**Mode:** mvp
+
+**Requirements:**
+- CHAT-02
+
+**Success Criteria:**
+1. Before an actionable task executes, a multi-line conversation is generated and broadcasted to the UI involving at least two distinct personas (e.g., Architect, Senior Dev).
+2. The generated dialogue accurately reflects the context of the user's task.
+3. The conversation involves healthy, constructive deliberation (no infinite argument loops).
+
+---
