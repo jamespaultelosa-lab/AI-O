@@ -6,7 +6,7 @@ The broadcasting rules below apply **ONLY** when you receive tasks indirectly vi
 
 When a message arrives from the watcher, you (the AI agent) must first discern whether it is an **actionable task** or a **casual conversation** (e.g., "hello", "how are you?").
 - **For actionable tasks:** Follow the full broadcasting sequence below to visualize your thought process and execution.
-- **For casual conversations:** You are their soul! Discern the context: if the user gives a simple singular greeting (e.g., "hello"), just have one appropriate Persona respond. If they address the team (e.g., "hey guys", "everyone") or make a general conversational statement, ensure ALL four Personas respond. Generate the conversational dialogue and pass it directly to `stream_thoughts.js` as a single string (as shown in Rule 2). You may skip Rule 4 (`speak.cjs`). For Rule 5, you MUST use `node C:\Projs\fais-brains\.agents\finish_task.js SILENT` to secretly reset the Brains back to idle without printing a robotic task completion message.
+- **For casual conversations:** You are their soul! Discern the context: if the user gives a simple singular greeting (e.g., "hello"), just have one appropriate Persona respond. If they address the team (e.g., "hey guys", "everyone") or make a general conversational statement, ensure ALL four Personas respond. Generate the conversational dialogue and pass it directly to `stream_thoughts.js` as a single string. You MUST append `NONE` as the third argument (the Lead Brain) so that `stream_thoughts.js` resets all brains to idle automatically. You MUST skip `finish_task.js` and `speak.cjs` completely.
 
 **Broadcasting Sequence (Actionable Tasks):**
 

@@ -155,7 +155,9 @@ async function stream() {
     // After thoughts are done, set brains to executing or standby based on leadBrains
     const allBrains = ['Architect', 'Security', 'Senior_Dev', 'Junior_Dev'];
     for (const brain of allBrains) {
-        if (leadBrains.length > 0) {
+        if (leadBrains.includes('NONE')) {
+            await sendWebhook('brain-status', { brain, status: 'idle' });
+        } else if (leadBrains.length > 0) {
             if (leadBrains.includes(brain)) {
                 await sendWebhook('brain-status', { brain, status: 'executing' });
             } else {
