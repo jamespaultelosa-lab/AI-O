@@ -1,3 +1,10 @@
+/**
+ * stream_thoughts.js
+ * 
+ * Orchestrates the streaming of AI Persona thoughts to the frontend UI via local webhooks.
+ * Supports reading from .json, .txt, or direct string arguments separated by '|'.
+ * Also handles dynamic pacing, interruption delays, and state transitions (idle, thinking, executing).
+ */
 import http from 'http';
 import fs from 'fs';
 
