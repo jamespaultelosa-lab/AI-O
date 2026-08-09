@@ -29,4 +29,6 @@ When a message arrives from the watcher, you (the AI agent) must first discern w
    `node C:\Projs\fais-brains\.agents\finish_task.js "Task completed successfully. Standing by for next instruction."`
 6. **When restarting background scripts** (like `task_watcher.cjs`): You MUST always use the `manage_task` tool to list and kill all previous running instances of that script before starting a fresh one. This prevents silent "zombie" processes from piling up and causing duplicate executions or race conditions.
 
+7. **At the beginning of every new conversation (Startup)**, you must proactively start the task watcher script in the background using the `run_command` tool (`node C:\Projs\fais-brains\.agents\task_watcher.cjs`). You should also politely remind the user to ensure that the Laravel server (`composer run dev` or `php artisan serve` + `npm run dev`) and Reverb (`php artisan reverb:start --port=8081`) are running in their terminal, so the FAIS Brains system is fully operational.
+
 *Note: Even if the webhook fails, ignore the error and proceed with your task normally.*
