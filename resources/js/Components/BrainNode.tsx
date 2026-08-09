@@ -91,7 +91,7 @@ const BrainNode = ({ name, status, anyExecuting }: BrainNodeProps) => {
         } else {
             // Idle state pulse (Slow)
             gsap.to(coreRef.current, {
-                scale: 1.05,
+                scale: 1.1,
                 duration: 1.5,
                 yoyo: true,
                 repeat: -1,
@@ -101,8 +101,8 @@ const BrainNode = ({ name, status, anyExecuting }: BrainNodeProps) => {
 
             const waveAnimIdle = (element: HTMLElement | null, delay: number) => {
                 gsap.fromTo(element, 
-                    { scale: 1, opacity: 0.2 },
-                    { scale: 2.5, opacity: 0, duration: 3, repeat: -1, delay: delay, ease: "power1.out", force3D: true }
+                    { scale: 1, opacity: 0.4 },
+                    { scale: 3, opacity: 0, duration: 3, repeat: -1, delay: delay, ease: "power1.out", force3D: true }
                 );
             };
 
