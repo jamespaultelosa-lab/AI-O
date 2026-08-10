@@ -7,6 +7,11 @@
  */
 import http from 'http';
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const input = process.argv[2];
 const leadBrains = process.argv[3] ? process.argv[3].split(',') : [];
@@ -93,14 +98,16 @@ function sendWebhook(endpoint, data) {
 }
 
 async function stream() {
-    // Check if another script is currently speaking
+    // Check if another script is currently speaking (resilient lock re-verification)
     try {
         const lockFile = path.resolve(__dirname, 'speaking.lock');
-        if (fs.existsSync(lockFile)) {
+        while (fs.existsSync(lockFile)) {
             const finishTime = parseInt(fs.readFileSync(lockFile, 'utf-8'));
             const now = Date.now();
             if (finishTime > now) {
-                await new Promise(r => setTimeout(r, finishTime - now + 500));
+                await new Promise(r => setTimeout(r, Math.min(finishTime - now + 500, 2000)));
+            } else {
+                break;
             }
         }
     } catch (e) {}

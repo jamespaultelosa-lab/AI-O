@@ -36,7 +36,7 @@ const BrainNetwork = () => {
             const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
             l.setAttribute("stroke", "currentColor");
             l.setAttribute("stroke-width", "0.5");
-            l.classList.add("opacity-60");
+            l.classList.add("opacity-90");
             linesPool.push(l);
         }
 

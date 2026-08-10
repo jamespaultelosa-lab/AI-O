@@ -34,7 +34,7 @@ Welcome to **AIO** (**A**bsolute **I**diots **O**rchestra)! This guide will help
 4. **Configure Obsidian Vault (Important for cross-workstation sync)**
    Open the `.env` file and configure the path to where your local Obsidian vault is located on this specific machine:
    ```env
-   OBSIDIAN_VAULT_PATH="C:\Users\ICTDO-James\Documents\Fais Project\FAIS"
+   OBSIDIAN_VAULT_PATH="C:\Obsidian\Vault"
    ```
 
 5. **Run Migrations**
