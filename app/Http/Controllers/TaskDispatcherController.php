@@ -14,11 +14,11 @@ class TaskDispatcherController extends Controller
         $taskText = strtolower($taskText);
         $wordCount = str_word_count($taskText);
         
-        $heavyKeywords = ['build', 'architecture', 'plan', 'database', 'refactor', 'implement', 'audit'];
-        $lightKeywords = ['color', 'typo', 'css', 'text', 'fix', 'tweak', 'ui'];
+        $heavyKeywords = ['build', 'architecture', 'database', 'refactor', 'system', 'audit', 'redesign'];
+        $mediumKeywords = ['fix', 'add', 'create', 'update', 'implement', 'feature', 'change', 'plan'];
         
         $heavyScore = 0;
-        $lightScore = 0;
+        $mediumScore = 0;
         
         foreach ($heavyKeywords as $keyword) {
             if (str_contains($taskText, $keyword)) {
@@ -26,17 +26,24 @@ class TaskDispatcherController extends Controller
             }
         }
         
-        foreach ($lightKeywords as $keyword) {
+        foreach ($mediumKeywords as $keyword) {
             if (str_contains($taskText, $keyword)) {
-                $lightScore++;
+                $mediumScore++;
             }
         }
         
-        if ($wordCount > 50 || $heavyScore > $lightScore) {
+        // Heavy difficulty task
+        if ($wordCount > 60 || $heavyScore >= 2) {
             return 'opus';
         }
         
-        return 'gemini 3.1 pro(high)';
+        // Medium difficulty task
+        if ($wordCount > 20 || $heavyScore > 0 || $mediumScore >= 2) {
+            return 'gemini 3.1 pro(high)';
+        }
+        
+        // Default light task
+        return 'gemini 3.6 flash(high)';
     }
 
     public function dispatch(Request $request)
@@ -66,7 +73,7 @@ class TaskDispatcherController extends Controller
         ]);
 
         // Broadcast acknowledgment
-        $systemMsg = "Task Received: \"$task\" [Routed to: $assignedModel]";
+        $systemMsg = "**Task Received: \"$task\" [Routed to: $assignedModel]**";
         BrainMessage::create([
             'brain' => 'SYSTEM',
             'message' => $systemMsg

@@ -18,6 +18,16 @@ interface JarvisUIProps {
     brains: Record<string, BrainData>;
 }
 
+const parseMarkdownBold = (input: string) => {
+    const parts = input.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, idx) => {
+        if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+            return <strong key={idx} className="font-extrabold text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]">{part.slice(2, -2)}</strong>;
+        }
+        return part;
+    });
+};
+
 const TypingMessage = ({ text, onComplete }: { text: string, onComplete?: () => void }) => {
     const [displayedText, setDisplayedText] = useState('');
 
@@ -41,7 +51,7 @@ const TypingMessage = ({ text, onComplete }: { text: string, onComplete?: () => 
         return () => clearInterval(intervalId);
     }, [text, onComplete]);
 
-    return <>{displayedText}</>;
+    return <>{parseMarkdownBold(displayedText)}</>;
 };
 
 interface MemoryEntry {
@@ -298,9 +308,14 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                 <header className={`absolute top-0 w-full p-6 flex justify-between items-center z-40 border-b backdrop-blur-sm transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-white/50' : 'border-cyan-900/50 bg-black/50'}`}>
                     <div className="flex items-center gap-4">
                         <div className={`w-3 h-3 rounded-full animate-pulse ${isLightMode ? 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]' : 'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,1)]'}`} />
-                        <h1 className={`text-2xl font-bold tracking-[0.3em] uppercase transition-colors duration-500 ${isLightMode ? 'text-slate-800' : 'text-cyan-500 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]'}`}>
-                            AI-O
-                        </h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className={`text-2xl font-bold tracking-[0.3em] uppercase transition-colors duration-500 ${isLightMode ? 'text-slate-800' : 'text-cyan-500 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]'}`}>
+                                AIO
+                            </h1>
+                            <span className={`text-[10px] font-mono tracking-widest uppercase px-2 py-0.5 rounded border transition-colors duration-500 ${isLightMode ? 'bg-slate-200 border-slate-300 text-slate-600' : 'bg-cyan-950/60 border-cyan-800/60 text-cyan-400'}`}>
+                                Absolute Idiots Orchestra 🎻
+                            </span>
+                        </div>
                     </div>
                     <div className="flex items-center gap-6">
                         <div className={`text-xs tracking-widest uppercase transition-colors duration-500 ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>
@@ -456,7 +471,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                         )}
                                                     </div>
                                                     <div className="flex-1 w-full overflow-hidden">
-                                                        {msg.brain === 'USER' ? cleanText : <TypingMessage text={cleanText} />}
+                                                        {msg.brain === 'USER' ? parseMarkdownBold(cleanText) : <TypingMessage text={cleanText} />}
                                                         
                                                         {options.length > 0 && (
                                                             <div className="mt-3 flex flex-wrap gap-2">

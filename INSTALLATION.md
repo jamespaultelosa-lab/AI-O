@@ -1,6 +1,6 @@
-# FAIS Brains - Installation & Startup Guide
+# AIO - Installation & Startup Guide 🎻🧠⚡
 
-Welcome to the FAIS Brains project! This guide will help you install and run the project seamlessly across different workstations.
+Welcome to **AIO** (**A**bsolute **I**diots **O**rchestra)! This guide will help you install and run the project seamlessly across different workstations.
 
 ## Prerequisites
 - **PHP 8.3+**
@@ -14,8 +14,8 @@ Welcome to the FAIS Brains project! This guide will help you install and run the
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
-   cd fais-brains
+   git clone https://github.com/jamespaultelosa-lab/AI-O.git
+   cd AI-O
    ```
 
 2. **Install dependencies**
@@ -32,9 +32,9 @@ Welcome to the FAIS Brains project! This guide will help you install and run the
    ```
 
 4. **Configure Obsidian Vault (Important for cross-workstation sync)**
-   Open the `.env` file and configure the path to where your local Obsidian vault is located on this specific machine.
+   Open the `.env` file and configure the path to where your local Obsidian vault is located on this specific machine:
    ```env
-   OBSIDIAN_VAULT_PATH="C:\Path\To\Your\Obsidian\FAIS"
+   OBSIDIAN_VAULT_PATH="C:\Users\ICTDO-James\Documents\Fais Project\FAIS"
    ```
 
 5. **Run Migrations**
@@ -46,22 +46,22 @@ Welcome to the FAIS Brains project! This guide will help you install and run the
 
 ## 2. Startup Guide
 
-To experience the full FAIS Brains AI orchestration and real-time UI, you need to run three separate processes. Open three terminal tabs in your project root:
+To experience full **AIO** multi-agent orchestration and real-time UI, run three separate processes in three terminal tabs:
 
 ### Terminal 1: Web & Frontend Server
-Boot up the Laravel backend and the React/Vite frontend concurrently.
+Boot up the Laravel backend and React/Vite frontend concurrently.
 ```bash
 composer run dev
 ```
 
 ### Terminal 2: Real-Time WebSocket Server (Reverb)
-This powers the live animations and thought stream broadcasts in the F.A.I.S. Command Center UI.
+Powers live animations and thought stream broadcasts in the AIO Command Center UI.
 ```bash
 php artisan reverb:start --port=8081
 ```
 
 ### Terminal 3: AI Task Watcher
-This background script acts as the bridge. It listens for tasks you submit in the UI and wakes up the IDE AI agent to process them.
+Background script bridging UI tasks to the local AI agent.
 ```bash
 node .agents/task_watcher.cjs
 ```
@@ -70,5 +70,6 @@ node .agents/task_watcher.cjs
 
 ## 3. Troubleshooting
 
-- **Tasks are not processing / stuck on "Forwarding to AI agent..."**: Ensure that your **Terminal 3** (Task Watcher) is running. The watcher must be active to bridge the web UI with the AI agent.
-- **The Brains UI isn't animating / no real-time updates**: Ensure **Terminal 2** (Reverb) is running on port 8081. Note: Tasks will still execute safely even if Reverb is down, but you will miss the live thought stream animations.
+- **Tasks stuck on "Forwarding to AI agent..."**: Ensure **Terminal 3** (Task Watcher) is running.
+- **Brain UI not animating / no real-time updates**: Ensure **Terminal 2** (Reverb) is running on port 8081.
+
