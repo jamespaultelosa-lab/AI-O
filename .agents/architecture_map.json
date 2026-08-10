@@ -3,762 +3,2312 @@
     {
       "path": "app/Models/AccountsFund.php",
       "type": "Model",
-      "name": "AccountsFund"
+      "name": "AccountsFund",
+      "methods": []
     },
     {
       "path": "app/Models/ActivityLog.php",
       "type": "Model",
-      "name": "ActivityLog"
+      "name": "ActivityLog",
+      "methods": [
+        "user"
+      ]
     },
     {
       "path": "app/Models/AdjustmentType.php",
       "type": "Model",
-      "name": "AdjustmentType"
+      "name": "AdjustmentType",
+      "methods": []
     },
     {
       "path": "app/Models/ContractOfService.php",
       "type": "Model",
-      "name": "ContractOfService"
+      "name": "ContractOfService",
+      "methods": [
+        "getFullNameAttribute",
+        "financial",
+        "history",
+        "activities",
+        "payrolls",
+        "booted"
+      ]
     },
     {
       "path": "app/Models/CosEmploymentHistory.php",
       "type": "Model",
-      "name": "CosEmploymentHistory"
+      "name": "CosEmploymentHistory",
+      "methods": [
+        "contractOfService"
+      ]
     },
     {
       "path": "app/Models/CosFinancial.php",
       "type": "Model",
-      "name": "CosFinancial"
+      "name": "CosFinancial",
+      "methods": [
+        "contractOfService"
+      ]
     },
     {
       "path": "app/Models/CosOrsAllotment.php",
       "type": "Model",
-      "name": "CosOrsAllotment"
+      "name": "CosOrsAllotment",
+      "methods": [
+        "obligation"
+      ]
     },
     {
       "path": "app/Models/CosOrsObligation.php",
       "type": "Model",
-      "name": "CosOrsObligation"
+      "name": "CosOrsObligation",
+      "methods": [
+        "allotments"
+      ]
     },
     {
       "path": "app/Models/CosPaymentCertSignatory.php",
       "type": "Model",
-      "name": "CosPaymentCertSignatory"
+      "name": "CosPaymentCertSignatory",
+      "methods": []
     },
     {
       "path": "app/Models/CosPayroll.php",
       "type": "Model",
-      "name": "CosPayroll"
+      "name": "CosPayroll",
+      "methods": [
+        "contractOfService"
+      ]
+    },
+    {
+      "path": "app/Models/Department.php",
+      "type": "Model",
+      "name": "Department",
+      "methods": []
+    },
+    {
+      "path": "app/Models/DepartmentAlias.php",
+      "type": "Model",
+      "name": "DepartmentAlias",
+      "methods": [
+        "department"
+      ]
     },
     {
       "path": "app/Models/Employee.php",
       "type": "Model",
-      "name": "Employee"
+      "name": "Employee",
+      "methods": [
+        "getFullNameAttribute",
+        "getSlugAttribute",
+        "financial",
+        "department",
+        "payslipTransactions",
+        "histories",
+        "payrolls",
+        "adjustments"
+      ]
     },
     {
       "path": "app/Models/EmployeeAdjustment.php",
       "type": "Model",
-      "name": "EmployeeAdjustment"
+      "name": "EmployeeAdjustment",
+      "methods": [
+        "employee",
+        "type",
+        "scopeForPeriod",
+        "regularOrsObligation",
+        "fundSource",
+        "accountsFund",
+        "specialPayrollList"
+      ]
     },
     {
       "path": "app/Models/EmployeeFinancial.php",
       "type": "Model",
-      "name": "EmployeeFinancial"
+      "name": "EmployeeFinancial",
+      "methods": [
+        "employee",
+        "salaryGrade",
+        "getSalaryGradeNumberAttribute",
+        "getSalaryStepAttribute",
+        "calculateStepFromSalary",
+        "getSalaryTrancheAttribute"
+      ]
     },
     {
       "path": "app/Models/EmployeeHistory.php",
       "type": "Model",
-      "name": "EmployeeHistory"
+      "name": "EmployeeHistory",
+      "methods": [
+        "employee"
+      ]
     },
     {
       "path": "app/Models/FundSource.php",
       "type": "Model",
-      "name": "FundSource"
+      "name": "FundSource",
+      "methods": [
+        "parent",
+        "children"
+      ]
+    },
+    {
+      "path": "app/Models/GenPayrollDeptCodeMapping.php",
+      "type": "Model",
+      "name": "GenPayrollDeptCodeMapping",
+      "methods": [
+        "fundSource",
+        "accountsFund",
+        "createdBy",
+        "updatedBy",
+        "scopeActive",
+        "scopeEffectiveFor",
+        "scopeForPurpose",
+        "scopeForDepartment",
+        "scopeForPosition",
+        "scopeForEmploymentStatus"
+      ]
     },
     {
       "path": "app/Models/Payroll.php",
       "type": "Model",
-      "name": "Payroll"
+      "name": "Payroll",
+      "methods": [
+        "employee",
+        "payslips",
+        "getFormattedPeriodAttribute",
+        "scopeForYear",
+        "scopeForMonth",
+        "scopeForEmployee",
+        "isFinalized",
+        "scopeFinalized",
+        "scopeDraft"
+      ]
+    },
+    {
+      "path": "app/Models/PayrollReportHistory.php",
+      "type": "Model",
+      "name": "PayrollReportHistory",
+      "methods": [
+        "generator"
+      ]
     },
     {
       "path": "app/Models/PayslipTransaction.php",
       "type": "Model",
-      "name": "PayslipTransaction"
+      "name": "PayslipTransaction",
+      "methods": [
+        "employee",
+        "payroll",
+        "getFormattedPeriodAttribute",
+        "getBasicSalaryAttribute",
+        "scopeForEmployee",
+        "scopeForPeriod",
+        "scopeForPayroll",
+        "isPrinted",
+        "markAsPrinted"
+      ]
     },
     {
       "path": "app/Models/Position.php",
       "type": "Model",
-      "name": "Position"
+      "name": "Position",
+      "methods": [
+        "scopeActive",
+        "scopeByType",
+        "employees"
+      ]
+    },
+    {
+      "path": "app/Models/RegularOrsObligation.php",
+      "type": "Model",
+      "name": "RegularOrsObligation",
+      "methods": [
+        "fundSource",
+        "accountsFund",
+        "adjustments"
+      ]
+    },
+    {
+      "path": "app/Models/ReportSignatoryAssignment.php",
+      "type": "Model",
+      "name": "ReportSignatoryAssignment",
+      "methods": [
+        "signatory"
+      ]
+    },
+    {
+      "path": "app/Models/ReportType.php",
+      "type": "Model",
+      "name": "ReportType",
+      "methods": [
+        "assignments"
+      ]
     },
     {
       "path": "app/Models/Role.php",
       "type": "Model",
-      "name": "Role"
+      "name": "Role",
+      "methods": [
+        "users",
+        "isSuperAdmin",
+        "isUser"
+      ]
     },
     {
       "path": "app/Models/SalaryGrade.php",
       "type": "Model",
-      "name": "SalaryGrade"
+      "name": "SalaryGrade",
+      "methods": [
+        "getSalaryForStep",
+        "getStepsAttribute"
+      ]
     },
     {
       "path": "app/Models/Signatory.php",
       "type": "Model",
-      "name": "Signatory"
+      "name": "Signatory",
+      "methods": [
+        "assignments"
+      ]
+    },
+    {
+      "path": "app/Models/SpecialPayrollList.php",
+      "type": "Model",
+      "name": "SpecialPayrollList",
+      "methods": [
+        "regularOrsObligation",
+        "createdBy",
+        "employeeAdjustments",
+        "canSetAmounts",
+        "canGenerate",
+        "markObligated",
+        "markAmountsSet",
+        "markGenerated",
+        "markDisbursed"
+      ]
     },
     {
       "path": "app/Models/SSSContribution.php",
       "type": "Model",
-      "name": "SSSContribution"
+      "name": "SSSContribution",
+      "methods": [
+        "totalContribution"
+      ]
+    },
+    {
+      "path": "app/Models/SystemAlert.php",
+      "type": "Model",
+      "name": "SystemAlert",
+      "methods": [
+        "user",
+        "resolver",
+        "scopeUnresolved",
+        "scopeResolved",
+        "scopeBySeverity",
+        "scopeByCategory",
+        "scopeActionable",
+        "scopeRecent",
+        "resolve"
+      ]
     },
     {
       "path": "app/Models/TaxBracket.php",
       "type": "Model",
-      "name": "TaxBracket"
+      "name": "TaxBracket",
+      "methods": [
+        "scopeOrdered"
+      ]
     },
     {
       "path": "app/Models/User.php",
       "type": "Model",
-      "name": "User"
+      "name": "User",
+      "methods": [
+        "casts",
+        "role",
+        "isSuperAdmin",
+        "isUser",
+        "hasRole"
+      ]
     }
   ],
-  "routes": [
+  "controllers": [
     {
-      "path": "routes/console.php",
-      "type": "RouteFile",
-      "name": "console.php"
+      "path": "app/Http/Controllers/AccountsFundController.php",
+      "type": "Controller",
+      "name": "AccountsFundController",
+      "methods": [
+        "store"
+      ]
     },
     {
-      "path": "routes/settings.php",
-      "type": "RouteFile",
-      "name": "settings.php"
+      "path": "app/Http/Controllers/ActivityLogController.php",
+      "type": "Controller",
+      "name": "ActivityLogController",
+      "methods": [
+        "index",
+        "show"
+      ]
     },
     {
-      "path": "routes/web.php",
-      "type": "RouteFile",
-      "name": "web.php"
+      "path": "app/Http/Controllers/Api/HealthCheckController.php",
+      "type": "Controller",
+      "name": "HealthCheckController",
+      "methods": [
+        "__invoke",
+        "checkDatabase",
+        "checkDisk",
+        "checkQueue",
+        "checkCache"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/Api/V1/PayslipApiController.php",
+      "type": "Controller",
+      "name": "PayslipApiController",
+      "methods": [
+        "index",
+        "show"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/Auth/GoogleController.php",
+      "type": "Controller",
+      "name": "GoogleController",
+      "methods": [
+        "redirectToGoogle",
+        "handleGoogleCallback"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/ContractOfServiceController.php",
+      "type": "Controller",
+      "name": "ContractOfServiceController",
+      "methods": [
+        "index",
+        "show",
+        "import",
+        "store",
+        "update",
+        "destroy",
+        "bulkDestroy",
+        "calculateSSS",
+        "buildFundSourceLookups",
+        "normalizeFundSourceName"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/Controller.php",
+      "type": "Controller",
+      "name": "Controller",
+      "methods": []
+    },
+    {
+      "path": "app/Http/Controllers/CosOrsObligationController.php",
+      "type": "Controller",
+      "name": "CosOrsObligationController",
+      "methods": [
+        "index",
+        "store",
+        "destroy",
+        "transfer",
+        "audit"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/CosPaymentCertController.php",
+      "type": "Controller",
+      "name": "CosPaymentCertController",
+      "methods": [
+        "index",
+        "show"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/CosPaymentCertSignatoryController.php",
+      "type": "Controller",
+      "name": "CosPaymentCertSignatoryController",
+      "methods": [
+        "index",
+        "store",
+        "update",
+        "destroy"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/CosPayrollController.php",
+      "type": "Controller",
+      "name": "CosPayrollController",
+      "methods": [
+        "index",
+        "syncOrs",
+        "generatePayrollNo",
+        "print",
+        "check",
+        "store",
+        "generateForEmployee",
+        "isDuplicateKeyException",
+        "destroy",
+        "update"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/DashboardController.php",
+      "type": "Controller",
+      "name": "DashboardController",
+      "methods": [
+        "index"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/DeductionImportController.php",
+      "type": "Controller",
+      "name": "DeductionImportController",
+      "methods": [
+        "isPeriodLocked",
+        "store",
+        "importLoans"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/DeletedRecordsController.php",
+      "type": "Controller",
+      "name": "DeletedRecordsController",
+      "methods": [
+        "employees",
+        "salaryGrades",
+        "payslips",
+        "payrolls",
+        "cos",
+        "cosPayrolls",
+        "restore",
+        "forceDelete",
+        "bulkRestore",
+        "bulkForceDelete"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/DepartmentController.php",
+      "type": "Controller",
+      "name": "DepartmentController",
+      "methods": [
+        "index",
+        "list",
+        "store",
+        "update",
+        "destroy",
+        "toggleActive",
+        "reorder"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/EmployeeBenefitsController.php",
+      "type": "Controller",
+      "name": "EmployeeBenefitsController",
+      "methods": [
+        "sanitizeNumericInput",
+        "sanitizeAdjustmentRows",
+        "isDeductionLocked",
+        "regenerateDraftPayroll",
+        "deductionsIndex",
+        "sync",
+        "syncDeductions",
+        "updateDeductionFields",
+        "syncEarnings",
+        "computeSalaryDifferential"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/EmployeeController.php",
+      "type": "Controller",
+      "name": "EmployeeController",
+      "methods": [
+        "index",
+        "edit",
+        "show",
+        "store",
+        "update",
+        "destroy",
+        "salaryGradeInfo"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/EmployeeImportController.php",
+      "type": "Controller",
+      "name": "EmployeeImportController",
+      "methods": [
+        "resolveDepartment",
+        "store"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/FundSourceController.php",
+      "type": "Controller",
+      "name": "FundSourceController",
+      "methods": [
+        "store",
+        "reorder",
+        "destroy"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/GenPayrollDeptCodeMappingController.php",
+      "type": "Controller",
+      "name": "GenPayrollDeptCodeMappingController",
+      "methods": [
+        "index",
+        "store",
+        "show",
+        "update",
+        "destroy",
+        "findConflicts",
+        "page"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/PayrollController.php",
+      "type": "Controller",
+      "name": "PayrollController",
+      "methods": [
+        "index",
+        "specialIndex",
+        "specialList",
+        "specialRoster",
+        "specialSave",
+        "syncDraftPayrollSpecialEarnings",
+        "specialPrint",
+        "calculateDeductions",
+        "generatePayroll",
+        "generationProgress"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/PayslipController.php",
+      "type": "Controller",
+      "name": "PayslipController",
+      "methods": [
+        "index",
+        "destroy",
+        "showMonthlyPayslip",
+        "markAsPrinted"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/PositionController.php",
+      "type": "Controller",
+      "name": "PositionController",
+      "methods": [
+        "index",
+        "salaryInfo"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/RegularOrsObligationController.php",
+      "type": "Controller",
+      "name": "RegularOrsObligationController",
+      "methods": [
+        "index",
+        "store",
+        "destroy",
+        "audit"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/ReportController.php",
+      "type": "Controller",
+      "name": "ReportController",
+      "methods": [
+        "generalPayrollReport",
+        "regenerate",
+        "regenerateBatch",
+        "yearEndBenefitsReport"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/ReportSignatoryAssignmentController.php",
+      "type": "Controller",
+      "name": "ReportSignatoryAssignmentController",
+      "methods": [
+        "index",
+        "storeReportType",
+        "update",
+        "destroy",
+        "destroyReportType"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/SalaryGradeController.php",
+      "type": "Controller",
+      "name": "SalaryGradeController",
+      "methods": [
+        "index",
+        "update",
+        "import",
+        "getInfo"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/Settings/PasswordController.php",
+      "type": "Controller",
+      "name": "PasswordController",
+      "methods": [
+        "edit",
+        "update"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/Settings/ProfileController.php",
+      "type": "Controller",
+      "name": "ProfileController",
+      "methods": [
+        "edit",
+        "update",
+        "destroy"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/Settings/TwoFactorAuthenticationController.php",
+      "type": "Controller",
+      "name": "TwoFactorAuthenticationController",
+      "methods": [
+        "middleware",
+        "show"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/SignatoryController.php",
+      "type": "Controller",
+      "name": "SignatoryController",
+      "methods": [
+        "index",
+        "update",
+        "store",
+        "destroy"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/SpecialPayrollListController.php",
+      "type": "Controller",
+      "name": "SpecialPayrollListController",
+      "methods": [
+        "index",
+        "store",
+        "show",
+        "update",
+        "destroy",
+        "addEmployees",
+        "removeEmployee",
+        "markObligated",
+        "setAmounts",
+        "generate"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/SystemAlertController.php",
+      "type": "Controller",
+      "name": "SystemAlertController",
+      "methods": [
+        "unseenCount",
+        "index",
+        "resolve",
+        "bulkResolve",
+        "destroy"
+      ]
+    },
+    {
+      "path": "app/Http/Controllers/TaxBracketController.php",
+      "type": "Controller",
+      "name": "TaxBracketController",
+      "methods": [
+        "index",
+        "update",
+        "bulkUpdate",
+        "upload"
+      ]
     }
   ],
+  "services": [
+    {
+      "path": "app/Services/ActivityLogger.php",
+      "type": "Service",
+      "name": "ActivityLogger",
+      "methods": [
+        "log"
+      ]
+    },
+    {
+      "path": "app/Services/CosPayrollService.php",
+      "type": "Service",
+      "name": "CosPayrollService",
+      "methods": [
+        "calculateDeductions",
+        "calculatePreviousCumulativeEarnings",
+        "computeTax",
+        "calculateAbsenceDeduction"
+      ]
+    },
+    {
+      "path": "app/Services/DeductionCalculationService.php",
+      "type": "Service",
+      "name": "DeductionCalculationService",
+      "methods": [
+        "computeMonthlyDeductions",
+        "computeGSIS",
+        "computeSSS",
+        "computePhilHealth",
+        "computeHDMF",
+        "computeProvidentFund",
+        "computeAupaeu",
+        "computeWithholdingTax",
+        "computeWithholdingTaxAnnualized",
+        "computeAnnualTaxSummary"
+      ]
+    },
+    {
+      "path": "app/Services/DocumentationService.php",
+      "type": "Service",
+      "name": "DocumentationService",
+      "methods": [
+        "getTableNames",
+        "getColumnsForTable",
+        "parseDocumentedSchema"
+      ]
+    },
+    {
+      "path": "app/Services/EmployeeService.php",
+      "type": "Service",
+      "name": "EmployeeService",
+      "methods": [
+        "create",
+        "update",
+        "findSalaryGrade",
+        "getSalaryFromStep",
+        "logHistoryChange",
+        "updateAdjustments"
+      ]
+    },
+    {
+      "path": "app/Services/FundReferenceDeduplicationService.php",
+      "type": "Service",
+      "name": "FundReferenceDeduplicationService",
+      "methods": [
+        "run",
+        "deduplicateFundSources",
+        "deduplicateAccountsFunds"
+      ]
+    },
+    {
+      "path": "app/Services/GeneralPayrollReportService.php",
+      "type": "Service",
+      "name": "GeneralPayrollReportService",
+      "methods": [
+        "build",
+        "getBanks",
+        "getOffices"
+      ]
+    },
+    {
+      "path": "app/Services/PayrollCodeMappingService.php",
+      "type": "Service",
+      "name": "PayrollCodeMappingService",
+      "methods": [
+        "resolve",
+        "resolveBatch",
+        "findBestMapping",
+        "resolveSpecificityScore",
+        "buildGeneratedCode"
+      ]
+    },
+    {
+      "path": "app/Services/PayrollGenerationService.php",
+      "type": "Service",
+      "name": "PayrollGenerationService",
+      "methods": [
+        "generateForEmployee",
+        "calculatePayrollPayload",
+        "generateForAllEmployees",
+        "calculateNetPay",
+        "payrollExists",
+        "regeneratePayroll"
+      ]
+    },
+    {
+      "path": "app/Services/PayslipGeneratorService.php",
+      "type": "Service",
+      "name": "PayslipGeneratorService",
+      "methods": [
+        "build",
+        "buildEmployee"
+      ]
+    },
+    {
+      "path": "app/Services/SalaryCalculationService.php",
+      "type": "Service",
+      "name": "SalaryCalculationService",
+      "methods": [
+        "getMonthlyBasicSalary",
+        "getSalaryGradeRecord",
+        "getLatestTranche",
+        "getAvailableSteps",
+        "determineStepFromSalary"
+      ]
+    },
+    {
+      "path": "app/Services/SalaryProrationService.php",
+      "type": "Service",
+      "name": "SalaryProrationService",
+      "methods": [
+        "resolve"
+      ]
+    },
+    {
+      "path": "app/Services/SystemAlertService.php",
+      "type": "Service",
+      "name": "SystemAlertService",
+      "methods": [
+        "critical",
+        "error",
+        "warning",
+        "info",
+        "fromException",
+        "fire",
+        "fingerprint",
+        "truncate",
+        "generateResolutionHint"
+      ]
+    }
+  ],
+  "events": [],
   "react": [
     {
       "path": "resources/js/Pages/ActivityLogs/Index.tsx",
       "type": "Page",
-      "name": "Index.tsx"
+      "name": "Index"
+    },
+    {
+      "path": "resources/js/Pages/Admin/DepartmentManagement/Index.tsx",
+      "type": "Page",
+      "name": "Index"
+    },
+    {
+      "path": "resources/js/Pages/Admin/PayrollCodeMappings/Index.tsx",
+      "type": "Page",
+      "name": "Index"
+    },
+    {
+      "path": "resources/js/Pages/Admin/PayrollCodeMappings/MappingFormDialog.tsx",
+      "type": "Page",
+      "name": "MappingFormDialog"
+    },
+    {
+      "path": "resources/js/Pages/Admin/Signatories/Assignments.tsx",
+      "type": "Page",
+      "name": "Assignments"
     },
     {
       "path": "resources/js/Pages/Admin/Signatories/Index.tsx",
       "type": "Page",
-      "name": "Index.tsx"
+      "name": "Index"
+    },
+    {
+      "path": "resources/js/Pages/AdminTools/Index.tsx",
+      "type": "Page",
+      "name": "Index"
     },
     {
       "path": "resources/js/Pages/auth/confirm-password.tsx",
       "type": "Page",
-      "name": "confirm-password.tsx"
+      "name": "confirm-password"
     },
     {
       "path": "resources/js/Pages/auth/forgot-password.tsx",
       "type": "Page",
-      "name": "forgot-password.tsx"
+      "name": "forgot-password"
     },
     {
       "path": "resources/js/Pages/auth/login.tsx",
       "type": "Page",
-      "name": "login.tsx"
+      "name": "login"
     },
     {
       "path": "resources/js/Pages/auth/register.tsx",
       "type": "Page",
-      "name": "register.tsx"
+      "name": "register"
     },
     {
       "path": "resources/js/Pages/auth/reset-password.tsx",
       "type": "Page",
-      "name": "reset-password.tsx"
+      "name": "reset-password"
     },
     {
       "path": "resources/js/Pages/auth/two-factor-challenge.tsx",
       "type": "Page",
-      "name": "two-factor-challenge.tsx"
+      "name": "two-factor-challenge"
     },
     {
       "path": "resources/js/Pages/auth/verify-email.tsx",
       "type": "Page",
-      "name": "verify-email.tsx"
+      "name": "verify-email"
     },
     {
       "path": "resources/js/Pages/ContractOfService/AddCOSForm.tsx",
       "type": "Page",
-      "name": "AddCOSForm.tsx"
+      "name": "AddCOSForm"
     },
     {
       "path": "resources/js/Pages/ContractOfService/COSEmployeeDetail.tsx",
       "type": "Page",
-      "name": "COSEmployeeDetail.tsx"
+      "name": "COSEmployeeDetail"
     },
     {
       "path": "resources/js/Pages/ContractOfService/COSForm.tsx",
       "type": "Page",
-      "name": "COSForm.tsx"
+      "name": "COSForm"
     },
     {
       "path": "resources/js/Pages/ContractOfService/EditCOSForm.tsx",
       "type": "Page",
-      "name": "EditCOSForm.tsx"
+      "name": "EditCOSForm"
     },
     {
       "path": "resources/js/Pages/ContractOfService/index.tsx",
       "type": "Page",
-      "name": "index.tsx"
+      "name": "index"
     },
     {
       "path": "resources/js/Pages/ContractOfService/show.tsx",
       "type": "Page",
-      "name": "show.tsx"
+      "name": "show"
     },
     {
       "path": "resources/js/Pages/ContractOfService/upload.tsx",
       "type": "Page",
-      "name": "upload.tsx"
+      "name": "upload"
     },
     {
       "path": "resources/js/Pages/CosOrsObligations/AccountEmployeesModal.tsx",
       "type": "Page",
-      "name": "AccountEmployeesModal.tsx"
+      "name": "AccountEmployeesModal"
     },
     {
       "path": "resources/js/Pages/CosOrsObligations/AddAccountsFundModal.tsx",
       "type": "Page",
-      "name": "AddAccountsFundModal.tsx"
+      "name": "AddAccountsFundModal"
     },
     {
       "path": "resources/js/Pages/CosOrsObligations/AddFundSourceModal.tsx",
       "type": "Page",
-      "name": "AddFundSourceModal.tsx"
+      "name": "AddFundSourceModal"
     },
     {
       "path": "resources/js/Pages/CosOrsObligations/AddObligationModal.tsx",
       "type": "Page",
-      "name": "AddObligationModal.tsx"
+      "name": "AddObligationModal"
     },
     {
       "path": "resources/js/Pages/CosOrsObligations/AllotmentsModal.tsx",
       "type": "Page",
-      "name": "AllotmentsModal.tsx"
+      "name": "AllotmentsModal"
     },
     {
       "path": "resources/js/Pages/CosOrsObligations/AuditTrail.tsx",
       "type": "Page",
-      "name": "AuditTrail.tsx"
+      "name": "AuditTrail"
     },
     {
       "path": "resources/js/Pages/CosOrsObligations/Index.tsx",
       "type": "Page",
-      "name": "Index.tsx"
+      "name": "Index"
+    },
+    {
+      "path": "resources/js/Pages/CosOrsObligations/TransferObligationModal.tsx",
+      "type": "Page",
+      "name": "TransferObligationModal"
     },
     {
       "path": "resources/js/Pages/CosPaymentCert/Index.tsx",
       "type": "Page",
-      "name": "Index.tsx"
+      "name": "Index"
     },
     {
       "path": "resources/js/Pages/CosPaymentCert/Show.tsx",
       "type": "Page",
-      "name": "Show.tsx"
+      "name": "Show"
     },
     {
       "path": "resources/js/Pages/CosPaymentCert/Signatories.tsx",
       "type": "Page",
-      "name": "Signatories.tsx"
+      "name": "Signatories"
     },
     {
       "path": "resources/js/Pages/CosPayroll/Index.tsx",
       "type": "Page",
-      "name": "Index.tsx"
+      "name": "Index"
     },
     {
       "path": "resources/js/Pages/CosPayroll/PrintCosPayroll.tsx",
       "type": "Page",
-      "name": "PrintCosPayroll.tsx"
+      "name": "PrintCosPayroll"
     },
     {
       "path": "resources/js/Pages/Dashboard/Index.tsx",
       "type": "Page",
-      "name": "Index.tsx"
+      "name": "Index"
     },
     {
       "path": "resources/js/Pages/DashboardComponents/components/AddEmployeeDialog.tsx",
       "type": "Page",
-      "name": "AddEmployeeDialog.tsx"
+      "name": "AddEmployeeDialog"
     },
     {
       "path": "resources/js/Pages/DashboardComponents/components/AddEmployeeSectionHeader.tsx",
       "type": "Page",
-      "name": "AddEmployeeSectionHeader.tsx"
+      "name": "AddEmployeeSectionHeader"
     },
     {
       "path": "resources/js/Pages/DashboardComponents/components/EditEmployeeDialog.tsx",
       "type": "Page",
-      "name": "EditEmployeeDialog.tsx"
+      "name": "EditEmployeeDialog"
     },
     {
       "path": "resources/js/Pages/DashboardComponents/components/EmployeeForm.tsx",
       "type": "Page",
-      "name": "EmployeeForm.tsx"
+      "name": "EmployeeForm"
     },
     {
       "path": "resources/js/Pages/DashboardComponents/components/EmployeeTable.tsx",
       "type": "Page",
-      "name": "EmployeeTable.tsx"
+      "name": "EmployeeTable"
     },
     {
       "path": "resources/js/Pages/DashboardComponents/components/RequiredIndicator.tsx",
       "type": "Page",
-      "name": "RequiredIndicator.tsx"
+      "name": "RequiredIndicator"
     },
     {
       "path": "resources/js/Pages/DeletedRecords/COS.tsx",
       "type": "Page",
-      "name": "COS.tsx"
+      "name": "COS"
     },
     {
       "path": "resources/js/Pages/DeletedRecords/CosPayrolls.tsx",
       "type": "Page",
-      "name": "CosPayrolls.tsx"
+      "name": "CosPayrolls"
     },
     {
       "path": "resources/js/Pages/DeletedRecords/Employees.tsx",
       "type": "Page",
-      "name": "Employees.tsx"
+      "name": "Employees"
     },
     {
       "path": "resources/js/Pages/DeletedRecords/Payrolls.tsx",
       "type": "Page",
-      "name": "Payrolls.tsx"
+      "name": "Payrolls"
     },
     {
       "path": "resources/js/Pages/DeletedRecords/Payslips.tsx",
       "type": "Page",
-      "name": "Payslips.tsx"
+      "name": "Payslips"
     },
     {
       "path": "resources/js/Pages/DeletedRecords/SalaryGrades.tsx",
       "type": "Page",
-      "name": "SalaryGrades.tsx"
+      "name": "SalaryGrades"
     },
     {
       "path": "resources/js/Pages/Employees/Deductions.tsx",
       "type": "Page",
-      "name": "Deductions.tsx"
+      "name": "Deductions"
     },
     {
       "path": "resources/js/Pages/Employees/Index.tsx",
       "type": "Page",
-      "name": "Index.tsx"
+      "name": "Index"
     },
     {
       "path": "resources/js/Pages/Employees/Show.tsx",
       "type": "Page",
-      "name": "Show.tsx"
+      "name": "Show"
     },
     {
       "path": "resources/js/Pages/login.tsx",
       "type": "Page",
-      "name": "login.tsx"
+      "name": "login"
     },
     {
       "path": "resources/js/Pages/Payrolls/Index.tsx",
       "type": "Page",
-      "name": "Index.tsx"
+      "name": "Index"
+    },
+    {
+      "path": "resources/js/Pages/Payrolls/Special/Index.tsx",
+      "type": "Page",
+      "name": "Index"
+    },
+    {
+      "path": "resources/js/Pages/Payrolls/Special/Print.tsx",
+      "type": "Page",
+      "name": "Print"
+    },
+    {
+      "path": "resources/js/Pages/Payrolls/Special/PrintList.tsx",
+      "type": "Page",
+      "name": "PrintList"
+    },
+    {
+      "path": "resources/js/Pages/Payrolls/Special/PrintPayroll.tsx",
+      "type": "Page",
+      "name": "PrintPayroll"
+    },
+    {
+      "path": "resources/js/Pages/Payrolls/Special/Show.tsx",
+      "type": "Page",
+      "name": "Show"
     },
     {
       "path": "resources/js/Pages/Payslips/Index.tsx",
       "type": "Page",
-      "name": "Index.tsx"
+      "name": "Index"
     },
     {
       "path": "resources/js/Pages/Payslips/MonthlyPayslip.tsx",
       "type": "Page",
-      "name": "MonthlyPayslip.tsx"
+      "name": "MonthlyPayslip"
     },
     {
       "path": "resources/js/Pages/Payslips/WeeklyPayslip.tsx",
       "type": "Page",
-      "name": "WeeklyPayslip.tsx"
+      "name": "WeeklyPayslip"
+    },
+    {
+      "path": "resources/js/Pages/RegularOrsObligations/AddAccountsFundModal.tsx",
+      "type": "Page",
+      "name": "AddAccountsFundModal"
+    },
+    {
+      "path": "resources/js/Pages/RegularOrsObligations/AddFundSourceModal.tsx",
+      "type": "Page",
+      "name": "AddFundSourceModal"
+    },
+    {
+      "path": "resources/js/Pages/RegularOrsObligations/AddObligationModal.tsx",
+      "type": "Page",
+      "name": "AddObligationModal"
+    },
+    {
+      "path": "resources/js/Pages/RegularOrsObligations/AuditTrail.tsx",
+      "type": "Page",
+      "name": "AuditTrail"
+    },
+    {
+      "path": "resources/js/Pages/RegularOrsObligations/Index.tsx",
+      "type": "Page",
+      "name": "Index"
     },
     {
       "path": "resources/js/Pages/Reports/GeneralPayroll.tsx",
       "type": "Page",
-      "name": "GeneralPayroll.tsx"
+      "name": "GeneralPayroll"
     },
     {
       "path": "resources/js/Pages/Reports/YearEndBenefits.tsx",
       "type": "Page",
-      "name": "YearEndBenefits.tsx"
+      "name": "YearEndBenefits"
     },
     {
       "path": "resources/js/Pages/SalaryGrades/Index.tsx",
       "type": "Page",
-      "name": "Index.tsx"
+      "name": "Index"
     },
     {
       "path": "resources/js/Pages/settings/appearance.tsx",
       "type": "Page",
-      "name": "appearance.tsx"
+      "name": "appearance"
     },
     {
       "path": "resources/js/Pages/settings/password.tsx",
       "type": "Page",
-      "name": "password.tsx"
+      "name": "password"
     },
     {
       "path": "resources/js/Pages/settings/profile.tsx",
       "type": "Page",
-      "name": "profile.tsx"
+      "name": "profile"
     },
     {
       "path": "resources/js/Pages/settings/two-factor.tsx",
       "type": "Page",
-      "name": "two-factor.tsx"
+      "name": "two-factor"
+    },
+    {
+      "path": "resources/js/Pages/SystemAlerts/Index.tsx",
+      "type": "Page",
+      "name": "Index"
     },
     {
       "path": "resources/js/Pages/TaxBrackets/Index.tsx",
       "type": "Page",
-      "name": "Index.tsx"
+      "name": "Index"
     },
     {
       "path": "resources/js/Pages/welcome.tsx",
       "type": "Page",
-      "name": "welcome.tsx"
+      "name": "welcome"
     },
     {
       "path": "resources/js/Components/alert-error.tsx",
       "type": "Component",
-      "name": "alert-error.tsx"
+      "name": "alert-error"
     },
     {
       "path": "resources/js/Components/app-content.tsx",
       "type": "Component",
-      "name": "app-content.tsx"
+      "name": "app-content"
     },
     {
       "path": "resources/js/Components/app-header.tsx",
       "type": "Component",
-      "name": "app-header.tsx"
+      "name": "app-header"
     },
     {
       "path": "resources/js/Components/app-logo-icon.tsx",
       "type": "Component",
-      "name": "app-logo-icon.tsx"
+      "name": "app-logo-icon"
     },
     {
       "path": "resources/js/Components/app-logo.tsx",
       "type": "Component",
-      "name": "app-logo.tsx"
+      "name": "app-logo"
     },
     {
       "path": "resources/js/Components/app-shell.tsx",
       "type": "Component",
-      "name": "app-shell.tsx"
+      "name": "app-shell"
     },
     {
       "path": "resources/js/Components/app-sidebar-header.tsx",
       "type": "Component",
-      "name": "app-sidebar-header.tsx"
+      "name": "app-sidebar-header"
     },
     {
       "path": "resources/js/Components/app-sidebar.tsx",
       "type": "Component",
-      "name": "app-sidebar.tsx"
+      "name": "app-sidebar"
     },
     {
       "path": "resources/js/Components/appearance-dropdown.tsx",
       "type": "Component",
-      "name": "appearance-dropdown.tsx"
+      "name": "appearance-dropdown"
     },
     {
       "path": "resources/js/Components/appearance-tabs.tsx",
       "type": "Component",
-      "name": "appearance-tabs.tsx"
+      "name": "appearance-tabs"
     },
     {
       "path": "resources/js/Components/breadcrumbs.tsx",
       "type": "Component",
-      "name": "breadcrumbs.tsx"
+      "name": "breadcrumbs"
     },
     {
       "path": "resources/js/Components/delete-user.tsx",
       "type": "Component",
-      "name": "delete-user.tsx"
+      "name": "delete-user"
     },
     {
       "path": "resources/js/Components/Employee/ViewEmployeeDialog.tsx",
       "type": "Component",
-      "name": "ViewEmployeeDialog.tsx"
+      "name": "ViewEmployeeDialog"
     },
     {
       "path": "resources/js/Components/employees/TaxSummaryCard.tsx",
       "type": "Component",
-      "name": "TaxSummaryCard.tsx"
+      "name": "TaxSummaryCard"
+    },
+    {
+      "path": "resources/js/Components/floating-appearance-toggle.tsx",
+      "type": "Component",
+      "name": "floating-appearance-toggle"
+    },
+    {
+      "path": "resources/js/Components/forms/FormErrorSummary.tsx",
+      "type": "Component",
+      "name": "FormErrorSummary"
+    },
+    {
+      "path": "resources/js/Components/forms/ImportErrorPanel.tsx",
+      "type": "Component",
+      "name": "ImportErrorPanel"
+    },
+    {
+      "path": "resources/js/Components/forms/PartialSuccessPanel.tsx",
+      "type": "Component",
+      "name": "PartialSuccessPanel"
     },
     {
       "path": "resources/js/Components/heading-small.tsx",
       "type": "Component",
-      "name": "heading-small.tsx"
+      "name": "heading-small"
     },
     {
       "path": "resources/js/Components/heading.tsx",
       "type": "Component",
-      "name": "heading.tsx"
+      "name": "heading"
     },
     {
       "path": "resources/js/Components/icon.tsx",
       "type": "Component",
-      "name": "icon.tsx"
+      "name": "icon"
     },
     {
       "path": "resources/js/Components/input-error.tsx",
       "type": "Component",
-      "name": "input-error.tsx"
+      "name": "input-error"
     },
     {
       "path": "resources/js/Components/kokonutui/animated-card.tsx",
       "type": "Component",
-      "name": "animated-card.tsx"
+      "name": "animated-card"
     },
     {
       "path": "resources/js/Components/kokonutui/mouse-effect-card.tsx",
       "type": "Component",
-      "name": "mouse-effect-card.tsx"
+      "name": "mouse-effect-card"
     },
     {
       "path": "resources/js/Components/LightRays.tsx",
       "type": "Component",
-      "name": "LightRays.tsx"
+      "name": "LightRays"
     },
     {
       "path": "resources/js/Components/LiquidEther.tsx",
       "type": "Component",
-      "name": "LiquidEther.tsx"
+      "name": "LiquidEther"
     },
     {
       "path": "resources/js/Components/login-form.tsx",
       "type": "Component",
-      "name": "login-form.tsx"
+      "name": "login-form"
     },
     {
       "path": "resources/js/Components/nav-footer.tsx",
       "type": "Component",
-      "name": "nav-footer.tsx"
+      "name": "nav-footer"
     },
     {
       "path": "resources/js/Components/nav-main.tsx",
       "type": "Component",
-      "name": "nav-main.tsx"
+      "name": "nav-main"
     },
     {
       "path": "resources/js/Components/nav-user.tsx",
       "type": "Component",
-      "name": "nav-user.tsx"
+      "name": "nav-user"
     },
     {
       "path": "resources/js/Components/page-transition.tsx",
       "type": "Component",
-      "name": "page-transition.tsx"
+      "name": "page-transition"
+    },
+    {
+      "path": "resources/js/Components/payrolls/SpecialPayrollsEmployeeList.tsx",
+      "type": "Component",
+      "name": "SpecialPayrollsEmployeeList"
     },
     {
       "path": "resources/js/Components/RoleGuard.tsx",
       "type": "Component",
-      "name": "RoleGuard.tsx"
+      "name": "RoleGuard"
     },
     {
       "path": "resources/js/Components/StepIndicator.tsx",
       "type": "Component",
-      "name": "StepIndicator.tsx"
+      "name": "StepIndicator"
     },
     {
       "path": "resources/js/Components/text-link.tsx",
       "type": "Component",
-      "name": "text-link.tsx"
+      "name": "text-link"
     },
     {
       "path": "resources/js/Components/two-factor-recovery-codes.tsx",
       "type": "Component",
-      "name": "two-factor-recovery-codes.tsx"
+      "name": "two-factor-recovery-codes"
     },
     {
       "path": "resources/js/Components/two-factor-setup-modal.tsx",
       "type": "Component",
-      "name": "two-factor-setup-modal.tsx"
+      "name": "two-factor-setup-modal"
     },
     {
       "path": "resources/js/Components/ui/alert-dialog.tsx",
       "type": "Component",
-      "name": "alert-dialog.tsx"
+      "name": "alert-dialog"
     },
     {
       "path": "resources/js/Components/ui/alert.tsx",
       "type": "Component",
-      "name": "alert.tsx"
+      "name": "alert"
     },
     {
       "path": "resources/js/Components/ui/avatar.tsx",
       "type": "Component",
-      "name": "avatar.tsx"
+      "name": "avatar"
     },
     {
       "path": "resources/js/Components/ui/badge.tsx",
       "type": "Component",
-      "name": "badge.tsx"
+      "name": "badge"
     },
     {
       "path": "resources/js/Components/ui/breadcrumb.tsx",
       "type": "Component",
-      "name": "breadcrumb.tsx"
+      "name": "breadcrumb"
     },
     {
       "path": "resources/js/Components/ui/button.tsx",
       "type": "Component",
-      "name": "button.tsx"
+      "name": "button"
     },
     {
       "path": "resources/js/Components/ui/card.tsx",
       "type": "Component",
-      "name": "card.tsx"
+      "name": "card"
     },
     {
       "path": "resources/js/Components/ui/checkbox.tsx",
       "type": "Component",
-      "name": "checkbox.tsx"
+      "name": "checkbox"
     },
     {
       "path": "resources/js/Components/ui/collapsible.tsx",
       "type": "Component",
-      "name": "collapsible.tsx"
+      "name": "collapsible"
     },
     {
       "path": "resources/js/Components/ui/dialog.tsx",
       "type": "Component",
-      "name": "dialog.tsx"
+      "name": "dialog"
     },
     {
       "path": "resources/js/Components/ui/dropdown-menu.tsx",
       "type": "Component",
-      "name": "dropdown-menu.tsx"
+      "name": "dropdown-menu"
     },
     {
       "path": "resources/js/Components/ui/field.tsx",
       "type": "Component",
-      "name": "field.tsx"
+      "name": "field"
     },
     {
       "path": "resources/js/Components/ui/icon.tsx",
       "type": "Component",
-      "name": "icon.tsx"
+      "name": "icon"
     },
     {
       "path": "resources/js/Components/ui/input-otp.tsx",
       "type": "Component",
-      "name": "input-otp.tsx"
+      "name": "input-otp"
     },
     {
       "path": "resources/js/Components/ui/input.tsx",
       "type": "Component",
-      "name": "input.tsx"
+      "name": "input"
     },
     {
       "path": "resources/js/Components/ui/label.tsx",
       "type": "Component",
-      "name": "label.tsx"
+      "name": "label"
     },
     {
       "path": "resources/js/Components/ui/navigation-menu.tsx",
       "type": "Component",
-      "name": "navigation-menu.tsx"
+      "name": "navigation-menu"
     },
     {
       "path": "resources/js/Components/ui/pagination.tsx",
       "type": "Component",
-      "name": "pagination.tsx"
+      "name": "pagination"
     },
     {
       "path": "resources/js/Components/ui/placeholder-pattern.tsx",
       "type": "Component",
-      "name": "placeholder-pattern.tsx"
+      "name": "placeholder-pattern"
     },
     {
       "path": "resources/js/Components/ui/scroll-area.tsx",
       "type": "Component",
-      "name": "scroll-area.tsx"
+      "name": "scroll-area"
     },
     {
       "path": "resources/js/Components/ui/select.tsx",
       "type": "Component",
-      "name": "select.tsx"
+      "name": "select"
     },
     {
       "path": "resources/js/Components/ui/separator.tsx",
       "type": "Component",
-      "name": "separator.tsx"
+      "name": "separator"
     },
     {
       "path": "resources/js/Components/ui/sheet.tsx",
       "type": "Component",
-      "name": "sheet.tsx"
+      "name": "sheet"
     },
     {
       "path": "resources/js/Components/ui/sidebar.tsx",
       "type": "Component",
-      "name": "sidebar.tsx"
+      "name": "sidebar"
     },
     {
       "path": "resources/js/Components/ui/skeleton.tsx",
       "type": "Component",
-      "name": "skeleton.tsx"
+      "name": "skeleton"
     },
     {
       "path": "resources/js/Components/ui/spinner.tsx",
       "type": "Component",
-      "name": "spinner.tsx"
+      "name": "spinner"
     },
     {
       "path": "resources/js/Components/ui/table.tsx",
       "type": "Component",
-      "name": "table.tsx"
+      "name": "table"
     },
     {
       "path": "resources/js/Components/ui/tabs.tsx",
       "type": "Component",
-      "name": "tabs.tsx"
+      "name": "tabs"
     },
     {
       "path": "resources/js/Components/ui/toaster.tsx",
       "type": "Component",
-      "name": "toaster.tsx"
+      "name": "toaster"
     },
     {
       "path": "resources/js/Components/ui/toggle-group.tsx",
       "type": "Component",
-      "name": "toggle-group.tsx"
+      "name": "toggle-group"
     },
     {
       "path": "resources/js/Components/ui/toggle.tsx",
       "type": "Component",
-      "name": "toggle.tsx"
+      "name": "toggle"
     },
     {
       "path": "resources/js/Components/ui/tooltip.tsx",
       "type": "Component",
-      "name": "tooltip.tsx"
+      "name": "tooltip"
     },
     {
       "path": "resources/js/Components/user-info.tsx",
       "type": "Component",
-      "name": "user-info.tsx"
+      "name": "user-info"
     },
     {
       "path": "resources/js/Components/user-menu-content.tsx",
       "type": "Component",
-      "name": "user-menu-content.tsx"
+      "name": "user-menu-content"
     }
   ],
-  "scanned_at": "2026-08-10T05:03:46.143Z"
+  "migrations": [
+    {
+      "path": "database/migrations/0001_01_01_000000_create_users_table.php",
+      "type": "Migration",
+      "name": "0001_01_01_000000_create_users_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/0001_01_01_000001_create_cache_table.php",
+      "type": "Migration",
+      "name": "0001_01_01_000001_create_cache_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/0001_01_01_000002_create_jobs_table.php",
+      "type": "Migration",
+      "name": "0001_01_01_000002_create_jobs_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2024_05_23_000000_create_employees_table.php",
+      "type": "Migration",
+      "name": "2024_05_23_000000_create_employees_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2025_08_26_100418_add_two_factor_columns_to_users_table.php",
+      "type": "Migration",
+      "name": "2025_08_26_100418_add_two_factor_columns_to_users_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_13_010025_create_salary_grades_table.php",
+      "type": "Migration",
+      "name": "2026_01_13_010025_create_salary_grades_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_13_010110_create_adjustment_types_table.php",
+      "type": "Migration",
+      "name": "2026_01_13_010110_create_adjustment_types_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_13_010148_create_employee_adjustments_table.php",
+      "type": "Migration",
+      "name": "2026_01_13_010148_create_employee_adjustments_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_13_020000_create_employee_financials_table.php",
+      "type": "Migration",
+      "name": "2026_01_13_020000_create_employee_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_20_070934_create_payslip_transactions_table.php",
+      "type": "Migration",
+      "name": "2026_01_20_070934_create_payslip_transactions_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_20_071120_create_weekly_payouts_table.php",
+      "type": "Migration",
+      "name": "2026_01_20_071120_create_weekly_payouts_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_20_074530_add_deduction_amounts_to_employee_financials_table.php",
+      "type": "Migration",
+      "name": "2026_01_20_074530_add_deduction_amounts_to_employee_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_21_022046_create_roles_table.php",
+      "type": "Migration",
+      "name": "2026_01_21_022046_create_roles_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_21_022048_add_role_id_to_users_table.php",
+      "type": "Migration",
+      "name": "2026_01_21_022048_add_role_id_to_users_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_21_022050_create_activity_logs_table.php",
+      "type": "Migration",
+      "name": "2026_01_21_022050_create_activity_logs_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_21_022051_add_soft_deletes_to_employees_table.php",
+      "type": "Migration",
+      "name": "2026_01_21_022051_add_soft_deletes_to_employees_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_21_022053_add_soft_deletes_to_salary_grades_table.php",
+      "type": "Migration",
+      "name": "2026_01_21_022053_add_soft_deletes_to_salary_grades_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_21_022444_add_soft_deletes_to_payslip_transactions_table.php",
+      "type": "Migration",
+      "name": "2026_01_21_022444_add_soft_deletes_to_payslip_transactions_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_23_052711_create_employee_histories_table.php",
+      "type": "Migration",
+      "name": "2026_01_23_052711_create_employee_histories_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_26_030900_refactor_to_weekly_payslips.php",
+      "type": "Migration",
+      "name": "2026_01_26_030900_refactor_to_weekly_payslips",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_26_033123_rename_monthly_basic_salary_to_weekly_and_add_monthly_reference.php",
+      "type": "Migration",
+      "name": "2026_01_26_033123_rename_monthly_basic_salary_to_weekly_and_add_monthly_reference",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_26_063410_create_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_01_26_063410_create_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_26_063416_add_payroll_id_to_payslip_transactions.php",
+      "type": "Migration",
+      "name": "2026_01_26_063416_add_payroll_id_to_payslip_transactions",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_27_063825_add_monthly_basic_salary_to_payslip_transactions_table.php",
+      "type": "Migration",
+      "name": "2026_01_27_063825_add_monthly_basic_salary_to_payslip_transactions_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_27_070727_make_weekly_columns_nullable_in_payslip_transactions.php",
+      "type": "Migration",
+      "name": "2026_01_27_070727_make_weekly_columns_nullable_in_payslip_transactions",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_28_032002_add_deleted_by_to_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_01_28_032002_add_deleted_by_to_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_01_28_093500_add_earnings_to_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_01_28_093500_add_earnings_to_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_02_000000_cleanup_duplicate_payslips.php",
+      "type": "Migration",
+      "name": "2026_02_02_000000_cleanup_duplicate_payslips",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_06_021510_add_performance_indexes_to_tables.php",
+      "type": "Migration",
+      "name": "2026_02_06_021510_add_performance_indexes_to_tables",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_06_071105_add_step_column_to_employee_financials_table.php",
+      "type": "Migration",
+      "name": "2026_02_06_071105_add_step_column_to_employee_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_09_075426_create_contract_of_services_table.php",
+      "type": "Migration",
+      "name": "2026_02_09_075426_create_contract_of_services_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_10_054702_create_cos_financials_table.php",
+      "type": "Migration",
+      "name": "2026_02_10_054702_create_cos_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_11_000001_create_positions_table.php",
+      "type": "Migration",
+      "name": "2026_02_11_000001_create_positions_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_11_000002_add_position_tracking_to_employee_histories.php",
+      "type": "Migration",
+      "name": "2026_02_11_000002_add_position_tracking_to_employee_histories",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_12_045541_add_union_dues_to_employee_financials_table.php",
+      "type": "Migration",
+      "name": "2026_02_12_045541_add_union_dues_to_employee_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_12_164421_add_earnings_to_employee_financials_table.php",
+      "type": "Migration",
+      "name": "2026_02_12_164421_add_earnings_to_employee_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_12_164948_remove_honoraria_from_employee_financials_table.php",
+      "type": "Migration",
+      "name": "2026_02_12_164948_remove_honoraria_from_employee_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_16_030722_remove_salary_grade_id_from_cos_financials_table.php",
+      "type": "Migration",
+      "name": "2026_02_16_030722_remove_salary_grade_id_from_cos_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_16_055035_add_deduction_amounts_to_cos_financials_table.php",
+      "type": "Migration",
+      "name": "2026_02_16_055035_add_deduction_amounts_to_cos_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_18_130219_add_provident_fund_amount_to_employee_financials_table.php",
+      "type": "Migration",
+      "name": "2026_02_18_130219_add_provident_fund_amount_to_employee_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_18_142628_add_end_date_to_employee_histories_table.php",
+      "type": "Migration",
+      "name": "2026_02_18_142628_add_end_date_to_employee_histories_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_19_033112_add_union_dues_to_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_02_19_033112_add_union_dues_to_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_19_065357_add_taxable_income_to_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_02_19_065357_add_taxable_income_to_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_19_093800_create_sss_contributions_table.php",
+      "type": "Migration",
+      "name": "2026_02_19_093800_create_sss_contributions_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_20_015240_create_cos_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_02_20_015240_create_cos_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_24_080212_add_deleted_at_to_cos_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_02_24_080212_add_deleted_at_to_cos_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_25_014543_add_missing_fields_to_cos_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_02_25_014543_add_missing_fields_to_cos_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_26_012244_add_email_to_employees_table.php",
+      "type": "Migration",
+      "name": "2026_02_26_012244_add_email_to_employees_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_26_014435_change_financial_columns_to_double_in_employee_financials.php",
+      "type": "Migration",
+      "name": "2026_02_26_014435_change_financial_columns_to_double_in_employee_financials",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_26_071857_create_cos_ors_obligations_table.php",
+      "type": "Migration",
+      "name": "2026_02_26_071857_create_cos_ors_obligations_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_02_26_101500_add_premium_to_cos_financials_table.php",
+      "type": "Migration",
+      "name": "2026_02_26_101500_add_premium_to_cos_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_02_013916_create_cos_employment_histories_table.php",
+      "type": "Migration",
+      "name": "2026_03_02_013916_create_cos_employment_histories_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_02_031231_add_category_to_adjustment_types_table.php",
+      "type": "Migration",
+      "name": "2026_03_02_031231_add_category_to_adjustment_types_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_02_031444_add_earnings_snapshot_to_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_03_02_031444_add_earnings_snapshot_to_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_02_052219_remove_payee_from_cos_ors_obligations.php",
+      "type": "Migration",
+      "name": "2026_03_02_052219_remove_payee_from_cos_ors_obligations",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_02_061837_add_ors_burs_to_cos_ors_obligations.php",
+      "type": "Migration",
+      "name": "2026_03_02_061837_add_ors_burs_to_cos_ors_obligations",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_02_072113_create_fund_sources_table.php",
+      "type": "Migration",
+      "name": "2026_03_02_072113_create_fund_sources_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_02_073000_add_loan_deduction_columns_to_payrolls_and_payslips_table.php",
+      "type": "Migration",
+      "name": "2026_03_02_073000_add_loan_deduction_columns_to_payrolls_and_payslips_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_02_075545_create_accounts_funds_table.php",
+      "type": "Migration",
+      "name": "2026_03_02_075545_create_accounts_funds_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_03_021654_add_obligation_fields_to_cos_financials_table.php",
+      "type": "Migration",
+      "name": "2026_03_03_021654_add_obligation_fields_to_cos_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_03_104500_add_ors_brs_field_to_cos_financials_table.php",
+      "type": "Migration",
+      "name": "2026_03_03_104500_add_ors_brs_field_to_cos_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_03_153000_add_account_title_to_cos_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_03_03_153000_add_account_title_to_cos_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_03_155000_add_period_to_cos_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_03_03_155000_add_period_to_cos_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_04_061936_add_payroll_no_to_cos_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_03_04_061936_add_payroll_no_to_cos_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_04_061936_create_cos_payroll_series_table.php",
+      "type": "Migration",
+      "name": "2026_03_04_061936_create_cos_payroll_series_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_11_000000_add_sort_order_to_fund_sources.php",
+      "type": "Migration",
+      "name": "2026_03_11_000000_add_sort_order_to_fund_sources",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_11_000001_add_more_performance_indexes.php",
+      "type": "Migration",
+      "name": "2026_03_11_000001_add_more_performance_indexes",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_18_000001_migrate_other_loans_to_adjustments.php",
+      "type": "Migration",
+      "name": "2026_03_18_000001_migrate_other_loans_to_adjustments",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_19_000000_add_fields_to_cos_ors_obligations_table.php",
+      "type": "Migration",
+      "name": "2026_03_19_000000_add_fields_to_cos_ors_obligations_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_19_032320_make_ors_fields_nullable_in_cos_ors_obligations_table.php",
+      "type": "Migration",
+      "name": "2026_03_19_032320_make_ors_fields_nullable_in_cos_ors_obligations_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_19_035244_add_disbursement_fields_to_cos_ors_obligations_table.php",
+      "type": "Migration",
+      "name": "2026_03_19_035244_add_disbursement_fields_to_cos_ors_obligations_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_19_043403_update_status_in_cos_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_03_19_043403_update_status_in_cos_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_23_120000_add_period_columns_to_employee_adjustments.php",
+      "type": "Migration",
+      "name": "2026_03_23_120000_add_period_columns_to_employee_adjustments",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_24_010500_create_idempotency_keys_table.php",
+      "type": "Migration",
+      "name": "2026_03_24_010500_create_idempotency_keys_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_24_120900_add_printed_at_to_payslip_transactions.php",
+      "type": "Migration",
+      "name": "2026_03_24_120900_add_printed_at_to_payslip_transactions",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_24_130000_migrate_null_period_adjustments.php",
+      "type": "Migration",
+      "name": "2026_03_24_130000_migrate_null_period_adjustments",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_31_000001_create_tax_brackets_table.php",
+      "type": "Migration",
+      "name": "2026_03_31_000001_create_tax_brackets_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_03_31_161228_change_wht_taxable_precision_in_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_03_31_161228_change_wht_taxable_precision_in_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_04_08_015436_create_signatories_table.php",
+      "type": "Migration",
+      "name": "2026_04_08_015436_create_signatories_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_04_08_021335_add_proration_fields_to_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_04_08_021335_add_proration_fields_to_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_04_08_034500_add_earnings_columns_to_payslip_transactions_table.php",
+      "type": "Migration",
+      "name": "2026_04_08_034500_add_earnings_columns_to_payslip_transactions_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_04_16_020500_update_cos_payroll_series_table.php",
+      "type": "Migration",
+      "name": "2026_04_16_020500_update_cos_payroll_series_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_04_16_110000_widen_financial_columns_to_4_decimals.php",
+      "type": "Migration",
+      "name": "2026_04_16_110000_widen_financial_columns_to_4_decimals",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_04_22_140000_create_cos_payment_cert_signatories_table.php",
+      "type": "Migration",
+      "name": "2026_04_22_140000_create_cos_payment_cert_signatories_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_04_23_120000_add_provident_fund_mode_to_employee_financials_table.php",
+      "type": "Migration",
+      "name": "2026_04_23_120000_add_provident_fund_mode_to_employee_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_04_27_065842_create_cos_ors_allotments_table.php",
+      "type": "Migration",
+      "name": "2026_04_27_065842_create_cos_ors_allotments_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_07_035037_add_slug_to_employees_table.php",
+      "type": "Migration",
+      "name": "2026_05_07_035037_add_slug_to_employees_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_11_000000_create_report_signatory_assignments_table.php",
+      "type": "Migration",
+      "name": "2026_05_11_000000_create_report_signatory_assignments_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_11_000001_create_report_types_table.php",
+      "type": "Migration",
+      "name": "2026_05_11_000001_create_report_types_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_11_000002_add_label_to_report_signatory_assignments_table.php",
+      "type": "Migration",
+      "name": "2026_05_11_000002_add_label_to_report_signatory_assignments_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_12_070650_create_regular_ors_obligations_table.php",
+      "type": "Migration",
+      "name": "2026_05_12_070650_create_regular_ors_obligations_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_12_090000_add_special_payroll_indexes.php",
+      "type": "Migration",
+      "name": "2026_05_12_090000_add_special_payroll_indexes",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_14_064111_add_unique_to_accounts_funds_table.php",
+      "type": "Migration",
+      "name": "2026_05_14_064111_add_unique_to_accounts_funds_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_14_072405_add_ors_links_to_employee_adjustments_table.php",
+      "type": "Migration",
+      "name": "2026_05_14_072405_add_ors_links_to_employee_adjustments_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_14_080000_add_fund_ids_to_regular_ors_obligations_table.php",
+      "type": "Migration",
+      "name": "2026_05_14_080000_add_fund_ids_to_regular_ors_obligations_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_20_000000_add_is_printed_to_employee_adjustments_table.php",
+      "type": "Migration",
+      "name": "2026_05_20_000000_add_is_printed_to_employee_adjustments_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_20_000001_create_payroll_report_history_table.php",
+      "type": "Migration",
+      "name": "2026_05_20_000001_create_payroll_report_history_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_20_074500_change_payee_to_text_in_cos_ors_obligations_table.php",
+      "type": "Migration",
+      "name": "2026_05_20_074500_change_payee_to_text_in_cos_ors_obligations_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_25_030828_create_personal_access_tokens_table.php",
+      "type": "Migration",
+      "name": "2026_05_25_030828_create_personal_access_tokens_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_05_29_000000_make_email_nullable_on_employees_table.php",
+      "type": "Migration",
+      "name": "2026_05_29_000000_make_email_nullable_on_employees_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_06_02_000000_create_departments_table.php",
+      "type": "Migration",
+      "name": "2026_06_02_000000_create_departments_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_06_03_064431_add_tax_summaries_to_employee_financials_table.php",
+      "type": "Migration",
+      "name": "2026_06_03_064431_add_tax_summaries_to_employee_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_06_04_000000_create_department_aliases_table.php",
+      "type": "Migration",
+      "name": "2026_06_04_000000_create_department_aliases_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_06_04_000001_add_department_id_to_employees_table.php",
+      "type": "Migration",
+      "name": "2026_06_04_000001_add_department_id_to_employees_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_06_04_000002_populate_department_id_on_employees.php",
+      "type": "Migration",
+      "name": "2026_06_04_000002_populate_department_id_on_employees",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_06_08_000000_create_gen_payroll_dept_code_mappings_table.php",
+      "type": "Migration",
+      "name": "2026_06_08_000000_create_gen_payroll_dept_code_mappings_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_06_08_000001_add_unresolved_mappings_to_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_06_08_000001_add_unresolved_mappings_to_payrolls_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_06_11_045205_add_aupaeu_mode_to_employee_financials_table.php",
+      "type": "Migration",
+      "name": "2026_06_11_045205_add_aupaeu_mode_to_employee_financials_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_06_25_111211_make_civil_status_nullable_in_employees_table.php",
+      "type": "Migration",
+      "name": "2026_06_25_111211_make_civil_status_nullable_in_employees_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_06_29_090000_create_special_payroll_lists_table.php",
+      "type": "Migration",
+      "name": "2026_06_29_090000_create_special_payroll_lists_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_06_29_090001_add_special_payroll_list_id_to_employee_adjustments.php",
+      "type": "Migration",
+      "name": "2026_06_29_090001_add_special_payroll_list_id_to_employee_adjustments",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_07_06_045000_add_retro_deduction_adjustment_types.php",
+      "type": "Migration",
+      "name": "2026_07_06_045000_add_retro_deduction_adjustment_types",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_07_14_070026_create_system_alerts_table.php",
+      "type": "Migration",
+      "name": "2026_07_14_070026_create_system_alerts_table",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_07_20_011400_fix_special_payroll_adjustment_types_payroll_code.php",
+      "type": "Migration",
+      "name": "2026_07_20_011400_fix_special_payroll_adjustment_types_payroll_code",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_07_20_015600_add_disbursed_status_to_special_payroll_lists.php",
+      "type": "Migration",
+      "name": "2026_07_20_015600_add_disbursed_status_to_special_payroll_lists",
+      "methods": []
+    },
+    {
+      "path": "database/migrations/2026_07_23_000000_add_unique_constraint_to_payrolls_table.php",
+      "type": "Migration",
+      "name": "2026_07_23_000000_add_unique_constraint_to_payrolls_table",
+      "methods": []
+    }
+  ],
+  "scanned_at": "2026-08-10T05:55:12.541Z"
 }

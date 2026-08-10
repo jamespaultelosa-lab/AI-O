@@ -47,3 +47,6 @@ When a message arrives from the watcher, you (the AI agent) must first discern w
 
 14. **PR Pre-Push Audit:** Senior Dev MUST always perform a thorough review and audit of all code changes/PRs before pushing to the repository.
 
+15. **Repo Push Selection:** When the user instructs to push code, the agent MUST NOT push automatically. The agent MUST present interactive options to the user to choose which repository to push (AI-O, FAIS Payroll SRS, or Both).
+
+

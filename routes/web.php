@@ -9,6 +9,7 @@ use App\Events\BrainMessageBroadcast;
 Route::get('/', [BrainController::class, 'index'])->name('brains.index');
 
 Route::get('/api/brain/memory', [\App\Http\Controllers\MemoryVaultController::class, 'getMemories']);
+Route::get('/api/brain/architecture', [\App\Http\Controllers\ArchitectureMapController::class, 'getArchitecture']);
 
 Route::post('/webhook/brain-status', function (Request $request) {
     $request->validate([
