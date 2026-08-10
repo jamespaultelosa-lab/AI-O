@@ -20,7 +20,7 @@ class TaskDispatcherController extends Controller
         Log::info("Task dispatched from F.A.I.S. Command Center: " . $task);
 
         // Write task to pending file for IDE agent to pick up
-        $pendingFile = base_path('../fais-brains/.agents/pending_task.json');
+        $pendingFile = base_path('.agents/pending_task.json');
         file_put_contents($pendingFile, json_encode([
             'task' => $task,
             'timestamp' => now()->toIso8601String()

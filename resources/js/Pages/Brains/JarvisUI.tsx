@@ -211,7 +211,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                     <div className="flex items-center gap-4">
                         <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,1)] animate-pulse" />
                         <h1 className="text-2xl font-bold tracking-[0.3em] uppercase text-cyan-500 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]">
-                            F.A.I.S. Neural Core
+                            AI-O
                         </h1>
                     </div>
                     <div className="text-xs tracking-widest text-cyan-700 uppercase">
@@ -220,18 +220,18 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                 </header>
 
                 {/* Main Visualizer Area */}
-                <main className="flex-1 flex overflow-hidden pt-[72px] pb-[40px] relative z-20">
+                <main className="flex-1 flex flex-col lg:flex-row overflow-hidden pt-[72px] pb-[40px] relative z-20">
                     {/* Brain Nodes Container */}
-                    <div className="flex-1 flex items-center justify-center p-8 overflow-y-auto">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 lg:gap-24 w-full max-w-4xl">
+                    <div className="flex-1 flex items-center justify-center p-2 lg:p-8 overflow-y-auto">
+                        <div className="grid grid-cols-2 gap-2 md:gap-8 lg:gap-16 w-full max-w-4xl justify-items-center">
                             {(() => {
-                                const anyExecuting = Object.values(brains).some(b => b.status === 'executing');
+                                const anyActive = Object.values(brains).some(b => b.status === 'executing' || b.status === 'thinking');
                                 return Object.entries(brains).map(([key, brain]) => (
                                     <BrainNode
                                         key={key}
                                         name={brain.name}
                                         status={brain.status}
-                                        anyExecuting={anyExecuting}
+                                        anyActive={anyActive}
                                     />
                                 ));
                             })()}
@@ -240,12 +240,12 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
 
                     {/* Thought Stream Sidebar */}
                     <aside
-                        className="border-l border-cyan-900/50 bg-black/40 backdrop-blur-md flex flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.5)] h-full overflow-hidden relative"
-                        style={{ width: `${sidebarWidth}px`, minWidth: '300px', maxWidth: '800px' }}
+                        className="border-t lg:border-t-0 lg:border-l border-cyan-900/50 bg-black/40 backdrop-blur-md flex flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.5)] h-1/2 lg:h-full w-full lg:w-[var(--sidebar-width)] min-w-full lg:min-w-[300px] max-w-full lg:max-w-[800px] overflow-hidden relative"
+                        style={{ '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties}
                     >
                         {/* Drag Handle */}
                         <div
-                            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-cyan-500/50 z-50 group"
+                            className="hidden lg:block absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-cyan-500/50 z-50 group"
                             onMouseDown={(e) => {
                                 e.preventDefault();
                                 const startX = e.clientX;

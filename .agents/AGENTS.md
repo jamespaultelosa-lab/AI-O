@@ -32,3 +32,5 @@ When a message arrives from the watcher, you (the AI agent) must first discern w
 7. **At the beginning of every new conversation (Startup)**, you must proactively start the task watcher script in the background using the `run_command` tool (`node C:\Projs\fais-brains\.agents\task_watcher.cjs`). You should also politely remind the user to ensure that the Laravel server (`composer run dev` or `php artisan serve` + `npm run dev`) and Reverb (`php artisan reverb:start --port=8081`) are running in their terminal, so the FAIS Brains system is fully operational.
 
 *Note: Even if the webhook fails, ignore the error and proceed with your task normally.*
+
+8. **Synchronous Broadcast Execution:** NEVER run `stream_thoughts.js` and `finish_task.js` simultaneously as background tasks. You must wait for the `stream_thoughts.js` script to completely finish its execution (run it synchronously with a high `WaitMsBeforeAsync` or wait for the system completion message) before you trigger `finish_task.js`. This prevents race conditions where the completion message appears out of order.
