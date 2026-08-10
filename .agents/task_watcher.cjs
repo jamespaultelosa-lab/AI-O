@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const { execSync } = require('child_process');
 
 const TASK_FILE = path.resolve(__dirname, 'pending_task.json');
 
@@ -58,10 +59,24 @@ fs.watch(TASK_FILE, async (eventType) => {
         if (data.task && data.timestamp && data.timestamp !== lastTimestamp) {
             lastTimestamp = data.timestamp;
             console.log('NEW_TASK_RECEIVED:', JSON.stringify(data));
+            if (data.assigned_model) {
+                console.log(`\n======================================================`);
+                console.log(`[SYSTEM ROUTER] Recommended Model: ${data.assigned_model}`);
+                console.log(`======================================================\n`);
+
+                if (data.assigned_model.toLowerCase().includes('opus')) {
+                    console.log("[CONTEXT ENGINE] Heavy task detected. Running architecture map scanner...");
+                    try {
+                        execSync(`node ${path.resolve(__dirname, 'scripts/generate_architecture_map.cjs')}`, { stdio: 'inherit' });
+                    } catch (err) {
+                        console.error("[CONTEXT ENGINE] Failed to run scanner:", err);
+                    }
+                }
+            }
             
             fs.writeFileSync(TASK_FILE, JSON.stringify({ task: null, timestamp: null }));
             
-            const systemMsg = `Task Received: "${data.task}". Forwarding to AI agent...`;
+            const systemMsg = `Task Received: "${data.task}" [Routed to: ${data.assigned_model || 'default'}]`;
             const systemMsgDelay = (systemMsg.length * 30) + 1000; // 30ms per char + 1s buffer
             
             // WRITE LOCK INSTANTLY so AI scripts wait for the SYSTEM message!

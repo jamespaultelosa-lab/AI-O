@@ -1,0 +1,764 @@
+{
+  "models": [
+    {
+      "path": "app/Models/AccountsFund.php",
+      "type": "Model",
+      "name": "AccountsFund"
+    },
+    {
+      "path": "app/Models/ActivityLog.php",
+      "type": "Model",
+      "name": "ActivityLog"
+    },
+    {
+      "path": "app/Models/AdjustmentType.php",
+      "type": "Model",
+      "name": "AdjustmentType"
+    },
+    {
+      "path": "app/Models/ContractOfService.php",
+      "type": "Model",
+      "name": "ContractOfService"
+    },
+    {
+      "path": "app/Models/CosEmploymentHistory.php",
+      "type": "Model",
+      "name": "CosEmploymentHistory"
+    },
+    {
+      "path": "app/Models/CosFinancial.php",
+      "type": "Model",
+      "name": "CosFinancial"
+    },
+    {
+      "path": "app/Models/CosOrsAllotment.php",
+      "type": "Model",
+      "name": "CosOrsAllotment"
+    },
+    {
+      "path": "app/Models/CosOrsObligation.php",
+      "type": "Model",
+      "name": "CosOrsObligation"
+    },
+    {
+      "path": "app/Models/CosPaymentCertSignatory.php",
+      "type": "Model",
+      "name": "CosPaymentCertSignatory"
+    },
+    {
+      "path": "app/Models/CosPayroll.php",
+      "type": "Model",
+      "name": "CosPayroll"
+    },
+    {
+      "path": "app/Models/Employee.php",
+      "type": "Model",
+      "name": "Employee"
+    },
+    {
+      "path": "app/Models/EmployeeAdjustment.php",
+      "type": "Model",
+      "name": "EmployeeAdjustment"
+    },
+    {
+      "path": "app/Models/EmployeeFinancial.php",
+      "type": "Model",
+      "name": "EmployeeFinancial"
+    },
+    {
+      "path": "app/Models/EmployeeHistory.php",
+      "type": "Model",
+      "name": "EmployeeHistory"
+    },
+    {
+      "path": "app/Models/FundSource.php",
+      "type": "Model",
+      "name": "FundSource"
+    },
+    {
+      "path": "app/Models/Payroll.php",
+      "type": "Model",
+      "name": "Payroll"
+    },
+    {
+      "path": "app/Models/PayslipTransaction.php",
+      "type": "Model",
+      "name": "PayslipTransaction"
+    },
+    {
+      "path": "app/Models/Position.php",
+      "type": "Model",
+      "name": "Position"
+    },
+    {
+      "path": "app/Models/Role.php",
+      "type": "Model",
+      "name": "Role"
+    },
+    {
+      "path": "app/Models/SalaryGrade.php",
+      "type": "Model",
+      "name": "SalaryGrade"
+    },
+    {
+      "path": "app/Models/Signatory.php",
+      "type": "Model",
+      "name": "Signatory"
+    },
+    {
+      "path": "app/Models/SSSContribution.php",
+      "type": "Model",
+      "name": "SSSContribution"
+    },
+    {
+      "path": "app/Models/TaxBracket.php",
+      "type": "Model",
+      "name": "TaxBracket"
+    },
+    {
+      "path": "app/Models/User.php",
+      "type": "Model",
+      "name": "User"
+    }
+  ],
+  "routes": [
+    {
+      "path": "routes/console.php",
+      "type": "RouteFile",
+      "name": "console.php"
+    },
+    {
+      "path": "routes/settings.php",
+      "type": "RouteFile",
+      "name": "settings.php"
+    },
+    {
+      "path": "routes/web.php",
+      "type": "RouteFile",
+      "name": "web.php"
+    }
+  ],
+  "react": [
+    {
+      "path": "resources/js/Pages/ActivityLogs/Index.tsx",
+      "type": "Page",
+      "name": "Index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/Admin/Signatories/Index.tsx",
+      "type": "Page",
+      "name": "Index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/auth/confirm-password.tsx",
+      "type": "Page",
+      "name": "confirm-password.tsx"
+    },
+    {
+      "path": "resources/js/Pages/auth/forgot-password.tsx",
+      "type": "Page",
+      "name": "forgot-password.tsx"
+    },
+    {
+      "path": "resources/js/Pages/auth/login.tsx",
+      "type": "Page",
+      "name": "login.tsx"
+    },
+    {
+      "path": "resources/js/Pages/auth/register.tsx",
+      "type": "Page",
+      "name": "register.tsx"
+    },
+    {
+      "path": "resources/js/Pages/auth/reset-password.tsx",
+      "type": "Page",
+      "name": "reset-password.tsx"
+    },
+    {
+      "path": "resources/js/Pages/auth/two-factor-challenge.tsx",
+      "type": "Page",
+      "name": "two-factor-challenge.tsx"
+    },
+    {
+      "path": "resources/js/Pages/auth/verify-email.tsx",
+      "type": "Page",
+      "name": "verify-email.tsx"
+    },
+    {
+      "path": "resources/js/Pages/ContractOfService/AddCOSForm.tsx",
+      "type": "Page",
+      "name": "AddCOSForm.tsx"
+    },
+    {
+      "path": "resources/js/Pages/ContractOfService/COSEmployeeDetail.tsx",
+      "type": "Page",
+      "name": "COSEmployeeDetail.tsx"
+    },
+    {
+      "path": "resources/js/Pages/ContractOfService/COSForm.tsx",
+      "type": "Page",
+      "name": "COSForm.tsx"
+    },
+    {
+      "path": "resources/js/Pages/ContractOfService/EditCOSForm.tsx",
+      "type": "Page",
+      "name": "EditCOSForm.tsx"
+    },
+    {
+      "path": "resources/js/Pages/ContractOfService/index.tsx",
+      "type": "Page",
+      "name": "index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/ContractOfService/show.tsx",
+      "type": "Page",
+      "name": "show.tsx"
+    },
+    {
+      "path": "resources/js/Pages/ContractOfService/upload.tsx",
+      "type": "Page",
+      "name": "upload.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosOrsObligations/AccountEmployeesModal.tsx",
+      "type": "Page",
+      "name": "AccountEmployeesModal.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosOrsObligations/AddAccountsFundModal.tsx",
+      "type": "Page",
+      "name": "AddAccountsFundModal.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosOrsObligations/AddFundSourceModal.tsx",
+      "type": "Page",
+      "name": "AddFundSourceModal.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosOrsObligations/AddObligationModal.tsx",
+      "type": "Page",
+      "name": "AddObligationModal.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosOrsObligations/AllotmentsModal.tsx",
+      "type": "Page",
+      "name": "AllotmentsModal.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosOrsObligations/AuditTrail.tsx",
+      "type": "Page",
+      "name": "AuditTrail.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosOrsObligations/Index.tsx",
+      "type": "Page",
+      "name": "Index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosPaymentCert/Index.tsx",
+      "type": "Page",
+      "name": "Index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosPaymentCert/Show.tsx",
+      "type": "Page",
+      "name": "Show.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosPaymentCert/Signatories.tsx",
+      "type": "Page",
+      "name": "Signatories.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosPayroll/Index.tsx",
+      "type": "Page",
+      "name": "Index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/CosPayroll/PrintCosPayroll.tsx",
+      "type": "Page",
+      "name": "PrintCosPayroll.tsx"
+    },
+    {
+      "path": "resources/js/Pages/Dashboard/Index.tsx",
+      "type": "Page",
+      "name": "Index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DashboardComponents/components/AddEmployeeDialog.tsx",
+      "type": "Page",
+      "name": "AddEmployeeDialog.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DashboardComponents/components/AddEmployeeSectionHeader.tsx",
+      "type": "Page",
+      "name": "AddEmployeeSectionHeader.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DashboardComponents/components/EditEmployeeDialog.tsx",
+      "type": "Page",
+      "name": "EditEmployeeDialog.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DashboardComponents/components/EmployeeForm.tsx",
+      "type": "Page",
+      "name": "EmployeeForm.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DashboardComponents/components/EmployeeTable.tsx",
+      "type": "Page",
+      "name": "EmployeeTable.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DashboardComponents/components/RequiredIndicator.tsx",
+      "type": "Page",
+      "name": "RequiredIndicator.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DeletedRecords/COS.tsx",
+      "type": "Page",
+      "name": "COS.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DeletedRecords/CosPayrolls.tsx",
+      "type": "Page",
+      "name": "CosPayrolls.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DeletedRecords/Employees.tsx",
+      "type": "Page",
+      "name": "Employees.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DeletedRecords/Payrolls.tsx",
+      "type": "Page",
+      "name": "Payrolls.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DeletedRecords/Payslips.tsx",
+      "type": "Page",
+      "name": "Payslips.tsx"
+    },
+    {
+      "path": "resources/js/Pages/DeletedRecords/SalaryGrades.tsx",
+      "type": "Page",
+      "name": "SalaryGrades.tsx"
+    },
+    {
+      "path": "resources/js/Pages/Employees/Deductions.tsx",
+      "type": "Page",
+      "name": "Deductions.tsx"
+    },
+    {
+      "path": "resources/js/Pages/Employees/Index.tsx",
+      "type": "Page",
+      "name": "Index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/Employees/Show.tsx",
+      "type": "Page",
+      "name": "Show.tsx"
+    },
+    {
+      "path": "resources/js/Pages/login.tsx",
+      "type": "Page",
+      "name": "login.tsx"
+    },
+    {
+      "path": "resources/js/Pages/Payrolls/Index.tsx",
+      "type": "Page",
+      "name": "Index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/Payslips/Index.tsx",
+      "type": "Page",
+      "name": "Index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/Payslips/MonthlyPayslip.tsx",
+      "type": "Page",
+      "name": "MonthlyPayslip.tsx"
+    },
+    {
+      "path": "resources/js/Pages/Payslips/WeeklyPayslip.tsx",
+      "type": "Page",
+      "name": "WeeklyPayslip.tsx"
+    },
+    {
+      "path": "resources/js/Pages/Reports/GeneralPayroll.tsx",
+      "type": "Page",
+      "name": "GeneralPayroll.tsx"
+    },
+    {
+      "path": "resources/js/Pages/Reports/YearEndBenefits.tsx",
+      "type": "Page",
+      "name": "YearEndBenefits.tsx"
+    },
+    {
+      "path": "resources/js/Pages/SalaryGrades/Index.tsx",
+      "type": "Page",
+      "name": "Index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/settings/appearance.tsx",
+      "type": "Page",
+      "name": "appearance.tsx"
+    },
+    {
+      "path": "resources/js/Pages/settings/password.tsx",
+      "type": "Page",
+      "name": "password.tsx"
+    },
+    {
+      "path": "resources/js/Pages/settings/profile.tsx",
+      "type": "Page",
+      "name": "profile.tsx"
+    },
+    {
+      "path": "resources/js/Pages/settings/two-factor.tsx",
+      "type": "Page",
+      "name": "two-factor.tsx"
+    },
+    {
+      "path": "resources/js/Pages/TaxBrackets/Index.tsx",
+      "type": "Page",
+      "name": "Index.tsx"
+    },
+    {
+      "path": "resources/js/Pages/welcome.tsx",
+      "type": "Page",
+      "name": "welcome.tsx"
+    },
+    {
+      "path": "resources/js/Components/alert-error.tsx",
+      "type": "Component",
+      "name": "alert-error.tsx"
+    },
+    {
+      "path": "resources/js/Components/app-content.tsx",
+      "type": "Component",
+      "name": "app-content.tsx"
+    },
+    {
+      "path": "resources/js/Components/app-header.tsx",
+      "type": "Component",
+      "name": "app-header.tsx"
+    },
+    {
+      "path": "resources/js/Components/app-logo-icon.tsx",
+      "type": "Component",
+      "name": "app-logo-icon.tsx"
+    },
+    {
+      "path": "resources/js/Components/app-logo.tsx",
+      "type": "Component",
+      "name": "app-logo.tsx"
+    },
+    {
+      "path": "resources/js/Components/app-shell.tsx",
+      "type": "Component",
+      "name": "app-shell.tsx"
+    },
+    {
+      "path": "resources/js/Components/app-sidebar-header.tsx",
+      "type": "Component",
+      "name": "app-sidebar-header.tsx"
+    },
+    {
+      "path": "resources/js/Components/app-sidebar.tsx",
+      "type": "Component",
+      "name": "app-sidebar.tsx"
+    },
+    {
+      "path": "resources/js/Components/appearance-dropdown.tsx",
+      "type": "Component",
+      "name": "appearance-dropdown.tsx"
+    },
+    {
+      "path": "resources/js/Components/appearance-tabs.tsx",
+      "type": "Component",
+      "name": "appearance-tabs.tsx"
+    },
+    {
+      "path": "resources/js/Components/breadcrumbs.tsx",
+      "type": "Component",
+      "name": "breadcrumbs.tsx"
+    },
+    {
+      "path": "resources/js/Components/delete-user.tsx",
+      "type": "Component",
+      "name": "delete-user.tsx"
+    },
+    {
+      "path": "resources/js/Components/Employee/ViewEmployeeDialog.tsx",
+      "type": "Component",
+      "name": "ViewEmployeeDialog.tsx"
+    },
+    {
+      "path": "resources/js/Components/employees/TaxSummaryCard.tsx",
+      "type": "Component",
+      "name": "TaxSummaryCard.tsx"
+    },
+    {
+      "path": "resources/js/Components/heading-small.tsx",
+      "type": "Component",
+      "name": "heading-small.tsx"
+    },
+    {
+      "path": "resources/js/Components/heading.tsx",
+      "type": "Component",
+      "name": "heading.tsx"
+    },
+    {
+      "path": "resources/js/Components/icon.tsx",
+      "type": "Component",
+      "name": "icon.tsx"
+    },
+    {
+      "path": "resources/js/Components/input-error.tsx",
+      "type": "Component",
+      "name": "input-error.tsx"
+    },
+    {
+      "path": "resources/js/Components/kokonutui/animated-card.tsx",
+      "type": "Component",
+      "name": "animated-card.tsx"
+    },
+    {
+      "path": "resources/js/Components/kokonutui/mouse-effect-card.tsx",
+      "type": "Component",
+      "name": "mouse-effect-card.tsx"
+    },
+    {
+      "path": "resources/js/Components/LightRays.tsx",
+      "type": "Component",
+      "name": "LightRays.tsx"
+    },
+    {
+      "path": "resources/js/Components/LiquidEther.tsx",
+      "type": "Component",
+      "name": "LiquidEther.tsx"
+    },
+    {
+      "path": "resources/js/Components/login-form.tsx",
+      "type": "Component",
+      "name": "login-form.tsx"
+    },
+    {
+      "path": "resources/js/Components/nav-footer.tsx",
+      "type": "Component",
+      "name": "nav-footer.tsx"
+    },
+    {
+      "path": "resources/js/Components/nav-main.tsx",
+      "type": "Component",
+      "name": "nav-main.tsx"
+    },
+    {
+      "path": "resources/js/Components/nav-user.tsx",
+      "type": "Component",
+      "name": "nav-user.tsx"
+    },
+    {
+      "path": "resources/js/Components/page-transition.tsx",
+      "type": "Component",
+      "name": "page-transition.tsx"
+    },
+    {
+      "path": "resources/js/Components/RoleGuard.tsx",
+      "type": "Component",
+      "name": "RoleGuard.tsx"
+    },
+    {
+      "path": "resources/js/Components/StepIndicator.tsx",
+      "type": "Component",
+      "name": "StepIndicator.tsx"
+    },
+    {
+      "path": "resources/js/Components/text-link.tsx",
+      "type": "Component",
+      "name": "text-link.tsx"
+    },
+    {
+      "path": "resources/js/Components/two-factor-recovery-codes.tsx",
+      "type": "Component",
+      "name": "two-factor-recovery-codes.tsx"
+    },
+    {
+      "path": "resources/js/Components/two-factor-setup-modal.tsx",
+      "type": "Component",
+      "name": "two-factor-setup-modal.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/alert-dialog.tsx",
+      "type": "Component",
+      "name": "alert-dialog.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/alert.tsx",
+      "type": "Component",
+      "name": "alert.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/avatar.tsx",
+      "type": "Component",
+      "name": "avatar.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/badge.tsx",
+      "type": "Component",
+      "name": "badge.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/breadcrumb.tsx",
+      "type": "Component",
+      "name": "breadcrumb.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/button.tsx",
+      "type": "Component",
+      "name": "button.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/card.tsx",
+      "type": "Component",
+      "name": "card.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/checkbox.tsx",
+      "type": "Component",
+      "name": "checkbox.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/collapsible.tsx",
+      "type": "Component",
+      "name": "collapsible.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/dialog.tsx",
+      "type": "Component",
+      "name": "dialog.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/dropdown-menu.tsx",
+      "type": "Component",
+      "name": "dropdown-menu.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/field.tsx",
+      "type": "Component",
+      "name": "field.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/icon.tsx",
+      "type": "Component",
+      "name": "icon.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/input-otp.tsx",
+      "type": "Component",
+      "name": "input-otp.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/input.tsx",
+      "type": "Component",
+      "name": "input.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/label.tsx",
+      "type": "Component",
+      "name": "label.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/navigation-menu.tsx",
+      "type": "Component",
+      "name": "navigation-menu.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/pagination.tsx",
+      "type": "Component",
+      "name": "pagination.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/placeholder-pattern.tsx",
+      "type": "Component",
+      "name": "placeholder-pattern.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/scroll-area.tsx",
+      "type": "Component",
+      "name": "scroll-area.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/select.tsx",
+      "type": "Component",
+      "name": "select.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/separator.tsx",
+      "type": "Component",
+      "name": "separator.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/sheet.tsx",
+      "type": "Component",
+      "name": "sheet.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/sidebar.tsx",
+      "type": "Component",
+      "name": "sidebar.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/skeleton.tsx",
+      "type": "Component",
+      "name": "skeleton.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/spinner.tsx",
+      "type": "Component",
+      "name": "spinner.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/table.tsx",
+      "type": "Component",
+      "name": "table.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/tabs.tsx",
+      "type": "Component",
+      "name": "tabs.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/toaster.tsx",
+      "type": "Component",
+      "name": "toaster.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/toggle-group.tsx",
+      "type": "Component",
+      "name": "toggle-group.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/toggle.tsx",
+      "type": "Component",
+      "name": "toggle.tsx"
+    },
+    {
+      "path": "resources/js/Components/ui/tooltip.tsx",
+      "type": "Component",
+      "name": "tooltip.tsx"
+    },
+    {
+      "path": "resources/js/Components/user-info.tsx",
+      "type": "Component",
+      "name": "user-info.tsx"
+    },
+    {
+      "path": "resources/js/Components/user-menu-content.tsx",
+      "type": "Component",
+      "name": "user-menu-content.tsx"
+    }
+  ],
+  "scanned_at": "2026-08-10T05:03:46.143Z"
+}

@@ -9,9 +9,10 @@ interface BrainNodeProps {
     name: string;
     status: string; // 'idle', 'thinking', 'consulting'
     anyActive?: boolean;
+    isLightMode?: boolean;
 }
 
-const BrainNode = ({ name, status, anyActive }: BrainNodeProps) => {
+const BrainNode = ({ name, status, anyActive, isLightMode }: BrainNodeProps) => {
     const isThinking = status === 'thinking';
     const isExecuting = status === 'executing';
     const isStandby = status === 'standby';
@@ -68,52 +69,102 @@ const BrainNode = ({ name, status, anyActive }: BrainNodeProps) => {
 
     const getPalette = () => {
         const normalizedName = name.replace(' ', '_');
-        switch (normalizedName) {
-            case 'Architect':
-                return {
-                    network: 'text-purple-400 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] drop-shadow-[0_0_15px_rgba(168,85,247,1)] drop-shadow-[0_0_40px_rgba(168,85,247,0.9)] drop-shadow-[0_0_80px_rgba(168,85,247,0.7)] brightness-125',
-                    mutedNetwork: 'text-purple-600 drop-shadow-[0_0_15px_rgba(168,85,247,1)] drop-shadow-[0_0_30px_rgba(168,85,247,0.6)]',
-                    activeText: 'text-purple-400 drop-shadow-[0_0_8px_rgba(192,132,252,0.8)]',
-                    mutedText: 'text-purple-800/60',
-                    activeSubText: 'text-purple-300',
-                    mutedSubText: 'text-purple-900/50'
-                };
-            case 'Senior_Dev':
-                return {
-                    network: 'text-blue-400 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] drop-shadow-[0_0_15px_rgba(59,130,246,1)] drop-shadow-[0_0_40px_rgba(59,130,246,0.9)] drop-shadow-[0_0_80px_rgba(59,130,246,0.7)] brightness-125',
-                    mutedNetwork: 'text-blue-600 drop-shadow-[0_0_15px_rgba(59,130,246,1)] drop-shadow-[0_0_30px_rgba(59,130,246,0.6)]',
-                    activeText: 'text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)]',
-                    mutedText: 'text-blue-800/60',
-                    activeSubText: 'text-blue-300',
-                    mutedSubText: 'text-blue-900/50'
-                };
-            case 'Junior_Dev':
-                return {
-                    network: 'text-green-400 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] drop-shadow-[0_0_15px_rgba(34,197,94,1)] drop-shadow-[0_0_40px_rgba(34,197,94,0.9)] drop-shadow-[0_0_80px_rgba(34,197,94,0.7)] brightness-125',
-                    mutedNetwork: 'text-green-600 drop-shadow-[0_0_15px_rgba(34,197,94,1)] drop-shadow-[0_0_30px_rgba(34,197,94,0.6)]',
-                    activeText: 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]',
-                    mutedText: 'text-green-800/60',
-                    activeSubText: 'text-green-300',
-                    mutedSubText: 'text-green-900/50'
-                };
-            case 'Security':
-                return {
-                    network: 'text-red-400 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] drop-shadow-[0_0_15px_rgba(239,68,68,1)] drop-shadow-[0_0_40px_rgba(239,68,68,0.9)] drop-shadow-[0_0_80px_rgba(239,68,68,0.7)] brightness-125',
-                    mutedNetwork: 'text-red-600 drop-shadow-[0_0_15px_rgba(239,68,68,1)] drop-shadow-[0_0_30px_rgba(239,68,68,0.6)]',
-                    activeText: 'text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]',
-                    mutedText: 'text-red-800/60',
-                    activeSubText: 'text-red-300',
-                    mutedSubText: 'text-red-900/50'
-                };
-            default:
-                return {
-                    network: 'text-cyan-300 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] drop-shadow-[0_0_15px_rgba(34,211,238,1)] drop-shadow-[0_0_40px_rgba(34,211,238,0.9)] drop-shadow-[0_0_80px_rgba(34,211,238,0.7)] brightness-125',
-                    mutedNetwork: 'text-cyan-600 drop-shadow-[0_0_15px_rgba(34,211,238,1)] drop-shadow-[0_0_30px_rgba(34,211,238,0.6)]',
-                    activeText: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]',
-                    mutedText: 'text-cyan-800/60',
-                    activeSubText: 'text-cyan-300',
-                    mutedSubText: 'text-cyan-900/50'
-                };
+        if (isLightMode) {
+            switch (normalizedName) {
+                case 'Architect':
+                    return {
+                        network: 'text-purple-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)]',
+                        mutedNetwork: 'text-purple-300 drop-shadow-[0_0_5px_rgba(168,85,247,0.2)]',
+                        activeText: 'text-purple-700',
+                        mutedText: 'text-purple-400',
+                        activeSubText: 'text-purple-500',
+                        mutedSubText: 'text-purple-300'
+                    };
+                case 'Senior_Dev':
+                    return {
+                        network: 'text-blue-600 drop-shadow-[0_0_10px_rgba(59,130,246,0.4)]',
+                        mutedNetwork: 'text-blue-300 drop-shadow-[0_0_5px_rgba(59,130,246,0.2)]',
+                        activeText: 'text-blue-700',
+                        mutedText: 'text-blue-400',
+                        activeSubText: 'text-blue-500',
+                        mutedSubText: 'text-blue-300'
+                    };
+                case 'Junior_Dev':
+                    return {
+                        network: 'text-green-600 drop-shadow-[0_0_10px_rgba(34,197,94,0.4)]',
+                        mutedNetwork: 'text-green-300 drop-shadow-[0_0_5px_rgba(34,197,94,0.2)]',
+                        activeText: 'text-green-700',
+                        mutedText: 'text-green-400',
+                        activeSubText: 'text-green-500',
+                        mutedSubText: 'text-green-300'
+                    };
+                case 'Security':
+                    return {
+                        network: 'text-red-600 drop-shadow-[0_0_10px_rgba(239,68,68,0.4)]',
+                        mutedNetwork: 'text-red-300 drop-shadow-[0_0_5px_rgba(239,68,68,0.2)]',
+                        activeText: 'text-red-700',
+                        mutedText: 'text-red-400',
+                        activeSubText: 'text-red-500',
+                        mutedSubText: 'text-red-300'
+                    };
+                default:
+                    return {
+                        network: 'text-cyan-600 drop-shadow-[0_0_10px_rgba(6,182,212,0.4)]',
+                        mutedNetwork: 'text-cyan-300 drop-shadow-[0_0_5px_rgba(6,182,212,0.2)]',
+                        activeText: 'text-cyan-700',
+                        mutedText: 'text-cyan-400',
+                        activeSubText: 'text-cyan-500',
+                        mutedSubText: 'text-cyan-300'
+                    };
+            }
+        } else {
+            switch (normalizedName) {
+                case 'Architect':
+                    return {
+                        network: 'text-purple-400 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] drop-shadow-[0_0_15px_rgba(168,85,247,1)] drop-shadow-[0_0_40px_rgba(168,85,247,0.9)] drop-shadow-[0_0_80px_rgba(168,85,247,0.7)] brightness-125',
+                        mutedNetwork: 'text-purple-600 drop-shadow-[0_0_15px_rgba(168,85,247,1)] drop-shadow-[0_0_30px_rgba(168,85,247,0.6)]',
+                        activeText: 'text-purple-400 drop-shadow-[0_0_8px_rgba(192,132,252,0.8)]',
+                        mutedText: 'text-purple-800/60',
+                        activeSubText: 'text-purple-300',
+                        mutedSubText: 'text-purple-900/50'
+                    };
+                case 'Senior_Dev':
+                    return {
+                        network: 'text-blue-400 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] drop-shadow-[0_0_15px_rgba(59,130,246,1)] drop-shadow-[0_0_40px_rgba(59,130,246,0.9)] drop-shadow-[0_0_80px_rgba(59,130,246,0.7)] brightness-125',
+                        mutedNetwork: 'text-blue-600 drop-shadow-[0_0_15px_rgba(59,130,246,1)] drop-shadow-[0_0_30px_rgba(59,130,246,0.6)]',
+                        activeText: 'text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)]',
+                        mutedText: 'text-blue-800/60',
+                        activeSubText: 'text-blue-300',
+                        mutedSubText: 'text-blue-900/50'
+                    };
+                case 'Junior_Dev':
+                    return {
+                        network: 'text-green-400 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] drop-shadow-[0_0_15px_rgba(34,197,94,1)] drop-shadow-[0_0_40px_rgba(34,197,94,0.9)] drop-shadow-[0_0_80px_rgba(34,197,94,0.7)] brightness-125',
+                        mutedNetwork: 'text-green-600 drop-shadow-[0_0_15px_rgba(34,197,94,1)] drop-shadow-[0_0_30px_rgba(34,197,94,0.6)]',
+                        activeText: 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]',
+                        mutedText: 'text-green-800/60',
+                        activeSubText: 'text-green-300',
+                        mutedSubText: 'text-green-900/50'
+                    };
+                case 'Security':
+                    return {
+                        network: 'text-red-400 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] drop-shadow-[0_0_15px_rgba(239,68,68,1)] drop-shadow-[0_0_40px_rgba(239,68,68,0.9)] drop-shadow-[0_0_80px_rgba(239,68,68,0.7)] brightness-125',
+                        mutedNetwork: 'text-red-600 drop-shadow-[0_0_15px_rgba(239,68,68,1)] drop-shadow-[0_0_30px_rgba(239,68,68,0.6)]',
+                        activeText: 'text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.8)]',
+                        mutedText: 'text-red-800/60',
+                        activeSubText: 'text-red-300',
+                        mutedSubText: 'text-red-900/50'
+                    };
+                default:
+                    return {
+                        network: 'text-cyan-300 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] drop-shadow-[0_0_15px_rgba(34,211,238,1)] drop-shadow-[0_0_40px_rgba(34,211,238,0.9)] drop-shadow-[0_0_80px_rgba(34,211,238,0.7)] brightness-125',
+                        mutedNetwork: 'text-cyan-600 drop-shadow-[0_0_15px_rgba(34,211,238,1)] drop-shadow-[0_0_30px_rgba(34,211,238,0.6)]',
+                        activeText: 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]',
+                        mutedText: 'text-cyan-800/60',
+                        activeSubText: 'text-cyan-300',
+                        mutedSubText: 'text-cyan-900/50'
+                    };
+            }
         }
     };
 
