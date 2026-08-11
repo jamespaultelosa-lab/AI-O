@@ -50,3 +50,5 @@ When a message arrives from the watcher, you (the AI agent) must first discern w
 15. **PR Pre-Push Audit:** Senior Dev MUST always perform a thorough review and audit of all code changes/PRs before pushing to the repository.
 
 16. **Repo Push Selection:** When the user instructs to push code, the agent MUST NOT push automatically. The agent MUST present interactive options to the user to choose which repository to push (AI-O, FAIS Payroll SRS, or Both).
+
+17. **Semantic Versioning Git Tagging:** Whenever code is pushed to a repository, Senior Dev MUST create an annotated git tag following industry-standard Semantic Versioning (`vMAJOR.MINOR.PATCH`, e.g., `v1.0.0`, `v1.0.1`). The tag must contain a clear, descriptive release message and be pushed to the remote (`git push origin <tag_name>`).
