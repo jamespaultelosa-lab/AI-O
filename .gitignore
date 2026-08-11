@@ -26,7 +26,8 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
-# FAIS Brains temp files
+# FAIS Brains temp & config files
+/.agents
 /.agents/pending_task.json
 /.agents/*.lock
 /.agents/thoughts*.txt
