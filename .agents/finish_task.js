@@ -51,7 +51,15 @@ async function finishTask() {
         }
     } catch (e) {}
 
-    let finalMessage = process.argv[2] || "Task completed. The AI agent has finished execution and is awaiting the next instruction.";
+    let rawInput = process.argv[2] || "Task completed. The AI agent has finished execution and is awaiting the next instruction.";
+    let senderBrain = 'Senior_Dev';
+    let finalMessage = rawInput;
+
+    const match = rawInput.match(/^\[(.*?)\]:\s*(.*)$/);
+    if (match) {
+        senderBrain = match[1];
+        finalMessage = match[2];
+    }
     
     if (finalMessage !== "SILENT") {
         if (!finalMessage.startsWith("[DONE] ")) {
@@ -59,8 +67,8 @@ async function finishTask() {
         }
 
         // Announce completion
-        await sendWebhook('brain-status', { brain: 'Senior_Dev', status: 'thinking' });
-        await sendWebhook('brain-message', { brain: 'Senior_Dev', message: finalMessage });
+        await sendWebhook('brain-status', { brain: senderBrain, status: 'thinking' });
+        await sendWebhook('brain-message', { brain: senderBrain, message: finalMessage });
 
         // Wait for the message to finish typing plus a 1-second pulsing buffer
         const delay = (finalMessage.length * 30) + 1000;

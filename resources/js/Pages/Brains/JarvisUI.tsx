@@ -38,7 +38,7 @@ const TypingMessage = ({ text, onComplete }: { text: string, onComplete?: () => 
         const intervalId = setInterval(() => {
             const elapsed = Date.now() - startTime;
             const charsToShow = Math.floor(elapsed / durationPerChar);
-            
+
             if (charsToShow >= text.length) {
                 setDisplayedText(text); // Finish
                 clearInterval(intervalId);
@@ -47,7 +47,7 @@ const TypingMessage = ({ text, onComplete }: { text: string, onComplete?: () => 
                 setDisplayedText(text.slice(0, charsToShow));
             }
         }, 16); // Run every frame (16ms) to guarantee smooth updates without drift
-        
+
         return () => clearInterval(intervalId);
     }, [text, onComplete]);
 
@@ -130,36 +130,118 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         }
     };
 
+    interface AttachedImage {
+        id: string;
+        dataUrl: string;
+        name: string;
+    }
+
+    const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
+    const [isDragging, setIsDragging] = useState<boolean>(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const processImageFile = (file: File) => {
+        if (!file.type.startsWith('image/')) return;
+        if (file.size > 5 * 1024 * 1024) {
+            alert("Image size exceeds 5MB limit.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const result = e.target?.result as string;
+            if (result) {
+                setAttachedImages(prev => [
+                    ...prev,
+                    { id: 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5), dataUrl: result, name: file.name || 'Pasted Image' }
+                ]);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handlePaste = (e: React.ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.startsWith('image/')) {
+                const file = items[i].getAsFile();
+                if (file) {
+                    processImageFile(file);
+                }
+            }
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            Array.from(e.dataTransfer.files).forEach(file => processImageFile(file));
+        }
+    };
+
+    const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            Array.from(e.target.files).forEach(file => processImageFile(file));
+        }
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const removeAttachedImage = (id: string) => {
+        setAttachedImages(prev => prev.filter(img => img.id !== id));
+    };
+
     const dispatchTask = async (taskText: string) => {
-        if (!taskText.trim() || isSubmitting) return;
+        if ((!taskText.trim() && attachedImages.length === 0) || isSubmitting) return;
         setIsSubmitting(true);
+
+        const imagesToUpload = attachedImages.map(img => img.dataUrl);
+        setAttachedImages([]);
+
+        let userMsgText = taskText;
+        if (imagesToUpload.length > 0) {
+            userMsgText += ' [IMAGES: ' + imagesToUpload.join(' :: ') + ']';
+        }
 
         setMessages(prev => [...prev, {
             id: Date.now() + Math.random(),
             brain: 'USER',
-            text: taskText,
+            text: userMsgText,
             time: new Date().toLocaleTimeString([], { hour12: false })
-        }].slice(-500));
+        }].slice(-30));
 
         if (autoScroll) {
-            setVisibleCount(prev => Math.min(prev + 1, 500));
+            setVisibleCount(prev => Math.min(prev + 1, 30));
         }
 
-        setTimeout(async () => {
-            try {
-                await axios.post('/api/brain/dispatch', { task: taskText });
-            } catch (error) {
-                console.error("Failed to dispatch task", error);
-                setMessages(prev => [...prev, {
-                    id: Date.now() + Math.random(),
-                    brain: 'SYSTEM',
-                    text: 'ERROR: Failed to reach orchestrator.',
-                    time: new Date().toLocaleTimeString([], { hour12: false })
-                }].slice(-500));
-            } finally {
-                setIsSubmitting(false);
-            }
-        }, 1000);
+        try {
+            await axios.post('/api/brain/dispatch', {
+                task: taskText,
+                images: imagesToUpload
+            });
+        } catch (error) {
+            console.error("Failed to dispatch task", error);
+            setMessages(prev => [...prev, {
+                id: Date.now() + Math.random(),
+                brain: 'SYSTEM',
+                text: 'ERROR: Failed to reach orchestrator.',
+                time: new Date().toLocaleTimeString([], { hour12: false })
+            }].slice(-30));
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleTaskSubmit = async (e: React.FormEvent) => {
@@ -259,11 +341,11 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                     brain: e.brainName,
                     text: e.message,
                     time: new Date(e.timestamp).toLocaleTimeString([], { hour12: false })
-                }].slice(-500)); // Keep up to 500 in memory
+                }].slice(-30)); // Keep up to 30 in memory
 
                 // If auto-scrolling is enabled, also bump the visible count so we don't hide new messages
                 if (autoScroll) {
-                    setVisibleCount(prev => Math.min(prev + 1, 500));
+                    setVisibleCount(prev => Math.min(prev + 1, 30));
                 }
             });
 
@@ -293,6 +375,34 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         };
     }, []);
 
+    const [queueCount, setQueueCount] = useState<number>(0);
+
+    const handleAbortTask = async () => {
+        try {
+            await axios.post('/abort-task');
+            setQueueCount(0);
+            setAttachedImages([]);
+        } catch (err) {
+            console.error("Failed to abort task", err);
+        }
+    };
+
+    useEffect(() => {
+        const checkQueue = async () => {
+            try {
+                const res = await axios.get('/task-queue');
+                if (res.data && typeof res.data.count === 'number') {
+                    setQueueCount(res.data.count);
+                }
+            } catch (err) { }
+        };
+        checkQueue();
+        const interval = setInterval(checkQueue, 2000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const isTaskActive = Object.values(brains).some(b => b.status === 'executing' || b.status === 'thinking') || queueCount > 0;
+
     return (
         <>
             <Head title="FAIS Brains Visualizer" />
@@ -308,20 +418,26 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                 <header className={`absolute top-0 w-full p-6 flex justify-between items-center z-40 border-b backdrop-blur-sm transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-white/50' : 'border-cyan-900/50 bg-black/50'}`}>
                     <div className="flex items-center gap-4">
                         <div className={`w-3 h-3 rounded-full animate-pulse ${isLightMode ? 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]' : 'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,1)]'}`} />
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col leading-tight">
                             <h1 className={`text-2xl font-bold tracking-[0.3em] uppercase transition-colors duration-500 ${isLightMode ? 'text-slate-800' : 'text-cyan-500 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]'}`}>
                                 AIO
                             </h1>
-                            <span className={`text-[10px] font-mono tracking-widest uppercase px-2 py-0.5 rounded border transition-colors duration-500 ${isLightMode ? 'bg-slate-200 border-slate-300 text-slate-600' : 'bg-cyan-950/60 border-cyan-800/60 text-cyan-400'}`}>
-                                Absolute Idiots Orchestra 🎻
+                            <span className={`text-[10px] font-mono tracking-widest uppercase transition-colors duration-500 ${isLightMode ? 'text-slate-500' : 'text-cyan-600'}`}>
+                                Absolute Idiots Orchestra
                             </span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
+                        {queueCount > 0 && (
+                            <span className="text-xs font-mono px-2.5 py-1 rounded border border-amber-500/50 bg-amber-950/40 text-amber-400 tracking-widest uppercase animate-pulse">
+                                Queue: {queueCount}
+                            </span>
+                        )}
+
                         <div className={`text-xs tracking-widest uppercase transition-colors duration-500 ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>
                             System Online • Monitoring
                         </div>
-                        <button 
+                        <button
                             onClick={() => setIsLightMode(!isLightMode)}
                             className={`p-2 rounded-full border transition-all ${isLightMode ? 'border-slate-300 bg-white text-slate-600 hover:bg-slate-100' : 'border-cyan-800 bg-cyan-950/30 text-cyan-400 hover:bg-cyan-900/50'}`}
                             title="Toggle Light Mode"
@@ -393,21 +509,19 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setActiveTab('thoughts')}
-                                    className={`px-3 py-1 text-[11px] font-bold tracking-wider rounded uppercase transition-all ${
-                                        activeTab === 'thoughts'
-                                            ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-300' : 'bg-cyan-950 border border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]')
-                                            : (isLightMode ? 'text-slate-400 hover:text-slate-600' : 'text-cyan-700 hover:text-cyan-400')
-                                    }`}
+                                    className={`px-3 py-1 text-[11px] font-bold tracking-wider rounded uppercase transition-all ${activeTab === 'thoughts'
+                                        ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-300' : 'bg-cyan-950 border border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]')
+                                        : (isLightMode ? 'text-slate-400 hover:text-slate-600' : 'text-cyan-700 hover:text-cyan-400')
+                                        }`}
                                 >
                                     Thought Stream
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('memory')}
-                                    className={`px-3 py-1 text-[11px] font-bold tracking-wider rounded uppercase transition-all flex items-center gap-1.5 ${
-                                        activeTab === 'memory'
-                                            ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-300' : 'bg-purple-950 border border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.3)]')
-                                            : (isLightMode ? 'text-slate-400 hover:text-slate-600' : 'text-purple-700 hover:text-purple-400')
-                                    }`}
+                                    className={`px-3 py-1 text-[11px] font-bold tracking-wider rounded uppercase transition-all flex items-center gap-1.5 ${activeTab === 'memory'
+                                        ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-300' : 'bg-purple-950 border border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.3)]')
+                                        : (isLightMode ? 'text-slate-400 hover:text-slate-600' : 'text-purple-700 hover:text-purple-400')
+                                        }`}
                                 >
                                     <span>Memory Vault</span>
                                     {memories.length > 0 && (
@@ -446,7 +560,15 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                     {messages.slice(-visibleCount).map((msg) => {
                                         let cleanText = msg.text.replace('[DONE] ', '');
                                         let options: string[] = [];
-                                        
+                                        let imageList: string[] = [];
+
+                                        // Parse out [IMAGES: url1 :: url2]
+                                        const imagesMatch = cleanText.match(/\[IMAGES:\s*(.+?)\]/i);
+                                        if (imagesMatch) {
+                                            imageList = imagesMatch[1].split('::').map(s => s.trim()).filter(Boolean);
+                                            cleanText = cleanText.replace(/\[IMAGES:\s*(.+?)\]/i, '').trim();
+                                        }
+
                                         // Parse out [OPTIONS: A :: B :: C]
                                         const optionsMatch = cleanText.match(/\[OPTIONS:\s*(.+?)\]/i);
                                         if (optionsMatch) {
@@ -472,7 +594,21 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                     </div>
                                                     <div className="flex-1 w-full overflow-hidden">
                                                         {msg.brain === 'USER' ? parseMarkdownBold(cleanText) : <TypingMessage text={cleanText} />}
-                                                        
+
+                                                        {imageList.length > 0 && (
+                                                            <div className="mt-2.5 flex flex-wrap gap-2">
+                                                                {imageList.map((imgUrl, imgIdx) => (
+                                                                    <a key={imgIdx} href={imgUrl} target="_blank" rel="noreferrer" className="block shrink-0">
+                                                                        <img
+                                                                            src={imgUrl}
+                                                                            alt="Attached Image"
+                                                                            className="w-24 h-24 object-cover rounded border border-cyan-500/40 hover:border-cyan-300 transition-all shadow-[0_0_10px_rgba(34,211,238,0.2)] hover:scale-105"
+                                                                        />
+                                                                    </a>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
                                                         {options.length > 0 && (
                                                             <div className="mt-3 flex flex-wrap gap-2">
                                                                 {options.map((opt, idx) => (
@@ -480,11 +616,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                                         key={idx}
                                                                         onClick={() => dispatchTask(opt)}
                                                                         disabled={isSubmitting}
-                                                                        className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                                                                            isLightMode 
-                                                                                ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 shadow-sm'
-                                                                                : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]'
-                                                                        }`}
+                                                                        className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isLightMode
+                                                                            ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 shadow-sm'
+                                                                            : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]'
+                                                                            }`}
                                                                     >
                                                                         {opt}
                                                                     </button>
@@ -513,11 +648,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                 memories.map((mem) => (
                                     <div
                                         key={mem.id}
-                                        className={`p-3 rounded-lg border transition-all duration-300 ${
-                                            isLightMode
-                                                ? 'bg-white border-purple-200 hover:border-purple-300 shadow-sm'
-                                                : 'bg-purple-950/20 border-purple-900/50 hover:border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.15)]'
-                                        }`}
+                                        className={`p-3 rounded-lg border transition-all duration-300 ${isLightMode
+                                            ? 'bg-white border-purple-200 hover:border-purple-300 shadow-sm'
+                                            : 'bg-purple-950/20 border-purple-900/50 hover:border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.15)]'
+                                            }`}
                                     >
                                         <div
                                             className="flex justify-between items-center cursor-pointer select-none"
@@ -531,13 +665,12 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                     {mem.title}
                                                 </span>
                                             </div>
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                                mem.severity === 'CRITICAL'
-                                                    ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse'
-                                                    : mem.severity === 'HIGH'
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${mem.severity === 'CRITICAL'
+                                                ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse'
+                                                : mem.severity === 'HIGH'
                                                     ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
                                                     : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
-                                            }`}>
+                                                }`}>
                                                 {mem.severity}
                                             </span>
                                         </div>
@@ -577,21 +710,100 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
 
                         {/* Terminal Input */}
                         <div className={`p-4 border-t transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-50' : 'border-cyan-900/50 bg-black/60'}`}>
+                            {/* Hidden File Input */}
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileInputChange}
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                            />
+
+                            {/* Thumbnail Preview Pills */}
+                            {attachedImages.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-2 p-2 rounded border border-cyan-900/40 bg-cyan-950/30">
+                                    {attachedImages.map((img) => (
+                                        <div key={img.id} className="relative group flex items-center gap-1.5 p-1 rounded border border-cyan-500/40 bg-cyan-950/60 text-cyan-300 text-[10px]">
+                                            <img src={img.dataUrl} alt={img.name} className="w-8 h-8 object-cover rounded" />
+                                            <span className="max-w-[100px] truncate">{img.name}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeAttachedImage(img.id)}
+                                                className="w-4 h-4 rounded-full bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center text-[10px] font-bold transition-all cursor-pointer"
+                                                title="Remove Image"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             <form onSubmit={handleTaskSubmit} className="flex flex-col gap-2">
                                 <div className={`text-[10px] uppercase tracking-widest flex justify-between ${isLightMode ? 'text-slate-500' : 'text-cyan-600'}`}>
-                                    <span>Command Terminal</span>
+                                    <span>Command Terminal {attachedImages.length > 0 && `(${attachedImages.length} Image Attached)`}</span>
                                     {isSubmitting && <span className="text-yellow-500 animate-pulse">TRANSMITTING...</span>}
                                 </div>
-                                <div className="relative">
-                                    <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold ${isLightMode ? 'text-slate-400' : 'text-cyan-500'}`}>&gt;</span>
-                                    <input
-                                        type="text"
-                                        value={taskInput}
-                                        onChange={(e) => setTaskInput(e.target.value)}
-                                        placeholder="Enter task or instruction..."
+                                <div
+                                    onPaste={handlePaste}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                    className={`flex items-center gap-2 p-1 rounded-md transition-all ${isDragging ? 'ring-2 ring-cyan-400 bg-cyan-950/40' : ''}`}
+                                >
+                                    {/* Paperclip Button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
                                         disabled={isSubmitting}
-                                        className={`w-full border rounded-md py-2 pl-8 pr-4 text-xs focus:outline-none focus:ring-1 transition-all disabled:opacity-50 ${isLightMode ? 'bg-white border-slate-300 text-slate-800 placeholder:text-slate-400 focus:border-slate-500 focus:ring-slate-500' : 'bg-cyan-950/30 border-cyan-800/50 text-cyan-300 placeholder:text-cyan-800/70 focus:border-cyan-400 focus:ring-cyan-400'}`}
-                                    />
+                                        className={`p-2 rounded-md border text-xs shrink-0 transition-all cursor-pointer disabled:opacity-40 ${isLightMode
+                                            ? 'bg-white border-slate-300 text-slate-600 hover:bg-slate-100'
+                                            : 'bg-cyan-950/40 border-cyan-800/60 text-cyan-400 hover:bg-cyan-900/60 hover:text-cyan-200 shadow-[0_0_8px_rgba(34,211,238,0.2)]'
+                                            }`}
+                                        title="Attach / Select Images (or paste from clipboard Ctrl+V)"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 010 12.728l-7.07 7.07a6 6 0 01-8.486-8.486l7.07-7.07a4 4 0 015.657 5.657l-7.07 7.07a2 2 0 01-2.828-2.828l7.07-7.07" />
+                                        </svg>
+                                    </button>
+
+                                    <div className="relative flex-1">
+                                        <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold ${isLightMode ? 'text-slate-400' : 'text-cyan-500'}`}>&gt;</span>
+                                        <input
+                                            type="text"
+                                            value={taskInput}
+                                            onChange={(e) => setTaskInput(e.target.value)}
+                                            placeholder={attachedImages.length > 0 ? "Enter instructions for attached image(s)..." : "Enter task or paste/drag image..."}
+                                            disabled={isSubmitting}
+                                            className={`w-full border rounded-md py-2 pl-8 pr-4 text-xs focus:outline-none focus:ring-1 transition-all disabled:opacity-50 ${isLightMode ? 'bg-white border-slate-300 text-slate-800 placeholder:text-slate-400 focus:border-slate-500 focus:ring-slate-500' : 'bg-cyan-950/30 border-cyan-800/50 text-cyan-300 placeholder:text-cyan-800/70 focus:border-cyan-400 focus:ring-cyan-400'}`}
+                                        />
+                                    </div>
+                                    {isTaskActive || isSubmitting ? (
+                                        <button
+                                            type="button"
+                                            onClick={handleAbortTask}
+                                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-md border border-red-500/60 bg-red-950/60 text-red-400 hover:bg-red-900/80 hover:text-red-200 font-mono text-xs tracking-wider uppercase transition-all shadow-[0_0_12px_rgba(239,68,68,0.4)] shrink-0 cursor-pointer"
+                                            title="Emergency Abort Current Task & Clear Queue"
+                                        >
+                                            <span className="w-2 h-2 rounded-sm bg-red-500 animate-ping" />
+                                            <span>STOP</span>
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="submit"
+                                            disabled={!taskInput.trim() && attachedImages.length === 0}
+                                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-md border text-xs font-mono tracking-wider uppercase shrink-0 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${isLightMode
+                                                ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700'
+                                                : 'bg-cyan-950/60 border-cyan-700/60 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.4)]'
+                                                }`}
+                                        >
+                                            <svg className="w-3.5 h-3.5 rotate-200 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3 21l18-9L3 3l3 9zm0 0h7" />
+                                            </svg>
+                                            <span>SEND</span>
+                                        </button>
+                                    )}
                                 </div>
                             </form>
                         </div>

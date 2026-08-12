@@ -8,3 +8,4 @@ class BrainMessage extends Model
 {
     protected $fillable = ['brain', 'message'];
 }
+

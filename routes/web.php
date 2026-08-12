@@ -11,6 +11,13 @@ Route::get('/', [BrainController::class, 'index'])->name('brains.index');
 Route::get('/api/brain/memory', [\App\Http\Controllers\MemoryVaultController::class, 'getMemories']);
 Route::get('/api/brain/architecture', [\App\Http\Controllers\ArchitectureMapController::class, 'getArchitecture']);
 
+Route::post('/dispatch-task', [\App\Http\Controllers\TaskDispatcherController::class, 'dispatch']);
+Route::post('/api/brain/dispatch', [\App\Http\Controllers\TaskDispatcherController::class, 'dispatch']);
+Route::post('/abort-task', [\App\Http\Controllers\TaskDispatcherController::class, 'abortTask']);
+Route::get('/task-queue', [\App\Http\Controllers\TaskDispatcherController::class, 'getQueueStatus']);
+Route::get('/history', [\App\Http\Controllers\TaskDispatcherController::class, 'getHistory']);
+Route::get('/api/brain/history', [\App\Http\Controllers\TaskDispatcherController::class, 'getHistory']);
+
 Route::post('/webhook/brain-status', function (Request $request) {
     $request->validate([
         'brain' => 'required|string',
