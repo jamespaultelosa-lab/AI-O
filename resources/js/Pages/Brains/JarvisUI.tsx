@@ -39,6 +39,7 @@ const TypingMessage = ({ text, onComplete }: { text: string, onComplete?: () => 
             const elapsed = Date.now() - startTime;
             const charsToShow = Math.floor(elapsed / durationPerChar);
 
+
             if (charsToShow >= text.length) {
                 setDisplayedText(text); // Finish
                 clearInterval(intervalId);
@@ -47,6 +48,7 @@ const TypingMessage = ({ text, onComplete }: { text: string, onComplete?: () => 
                 setDisplayedText(text.slice(0, charsToShow));
             }
         }, 16); // Run every frame (16ms) to guarantee smooth updates without drift
+
 
         return () => clearInterval(intervalId);
     }, [text, onComplete]);
@@ -426,12 +428,18 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                             <h1 className={`text-xl sm:text-2xl font-extrabold tracking-[0.25em] font-mono uppercase leading-tight transition-colors duration-500 ${isLightMode ? 'text-slate-900' : 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.4)]'}`}>
                                 AIO
                             </h1>
-                            <span className={`text-[9px] sm:text-[10px] font-mono tracking-[0.22em] uppercase font-medium leading-tight transition-colors duration-500 ${isLightMode ? 'text-slate-500' : 'text-cyan-400/80'}`}>
-                                Absolute Idiots Orchestra 🎻
+                            <span className={`text-[10px] font-mono tracking-widest uppercase transition-colors duration-500 ${isLightMode ? 'text-slate-500' : 'text-cyan-600'}`}>
+                                Absolute Idiots Orchestra
                             </span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="flex items-center gap-4 sm:gap-4">
+                        {queueCount > 0 && (
+                            <span className="text-xs font-mono px-2.5 py-1 rounded border border-amber-500/50 bg-amber-950/40 text-amber-400 tracking-widest uppercase animate-pulse">
+                                Queue: {queueCount}
+                            </span>
+                        )}
+
                         <div className={`hidden sm:flex items-center gap-2 text-[11px] font-mono tracking-[0.15em] uppercase px-3 py-1 rounded-full border transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-100/80 text-slate-600' : 'border-cyan-900/50 bg-cyan-950/40 text-cyan-400/90'}`}>
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                             Live Orchestration • Autonomous
@@ -512,6 +520,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                         ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-300' : 'bg-cyan-950 border border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]')
                                         : (isLightMode ? 'text-slate-400 hover:text-slate-600' : 'text-cyan-700 hover:text-cyan-400')
                                         }`}
+                                    className={`px-3 py-1 text-[11px] font-bold tracking-wider rounded uppercase transition-all ${activeTab === 'thoughts'
+                                        ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-300' : 'bg-cyan-950 border border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]')
+                                        : (isLightMode ? 'text-slate-400 hover:text-slate-600' : 'text-cyan-700 hover:text-cyan-400')
+                                        }`}
                                 >
                                     Thought Stream
                                 </button>
@@ -559,6 +571,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                     {messages.slice(-visibleCount).map((msg) => {
                                         let cleanText = msg.text.replace('[DONE] ', '');
                                         let options: string[] = [];
+
                                         let imageList: string[] = [];
 
                                         // Parse out [IMAGES: url1 :: url2]
@@ -594,6 +607,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                     <div className="flex-1 w-full overflow-hidden">
                                                         {msg.brain === 'USER' ? parseMarkdownBold(cleanText) : <TypingMessage text={cleanText} />}
 
+
                                                         {imageList.length > 0 && (
                                                             <div className="mt-2.5 flex flex-wrap gap-2">
                                                                 {imageList.map((imgUrl, imgIdx) => (
@@ -615,6 +629,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                                         key={idx}
                                                                         onClick={() => dispatchTask(opt)}
                                                                         disabled={isSubmitting}
+                                                                        className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isLightMode
+                                                                            ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 shadow-sm'
+                                                                            : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]'
+                                                                            }`}
                                                                         className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isLightMode
                                                                             ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 shadow-sm'
                                                                             : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]'
@@ -647,6 +665,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                 memories.map((mem) => (
                                     <div
                                         key={mem.id}
+                                        className={`p-3 rounded-lg border transition-all duration-300 ${isLightMode
+                                            ? 'bg-white border-purple-200 hover:border-purple-300 shadow-sm'
+                                            : 'bg-purple-950/20 border-purple-900/50 hover:border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.15)]'
+                                            }`}
                                         className={`p-3 rounded-lg border transition-all duration-300 ${isLightMode
                                             ? 'bg-white border-purple-200 hover:border-purple-300 shadow-sm'
                                             : 'bg-purple-950/20 border-purple-900/50 hover:border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.15)]'
