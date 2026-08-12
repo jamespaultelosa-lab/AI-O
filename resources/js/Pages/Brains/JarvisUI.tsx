@@ -405,7 +405,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
 
     return (
         <>
-            <Head title="FAIS Brains Visualizer" />
+            <Head title="Absolute Idiots Orchestra" />
 
             <div className={`h-screen w-full overflow-hidden flex flex-col relative font-mono transition-colors duration-500 ${isLightMode ? 'bg-slate-50 text-slate-800' : 'bg-black text-cyan-500'}`}>
 
@@ -415,39 +415,38 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                 <div className={`absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black_90%)] pointer-events-none z-10 ${isLightMode ? 'bg-slate-50' : 'bg-black'}`} />
 
                 {/* Header */}
-                <header className={`absolute top-0 w-full p-6 flex justify-between items-center z-40 border-b backdrop-blur-sm transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-white/50' : 'border-cyan-900/50 bg-black/50'}`}>
-                    <div className="flex items-center gap-4">
-                        <div className={`w-3 h-3 rounded-full animate-pulse ${isLightMode ? 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]' : 'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,1)]'}`} />
-                        <div className="flex flex-col leading-tight">
-                            <h1 className={`text-2xl font-bold tracking-[0.3em] uppercase transition-colors duration-500 ${isLightMode ? 'text-slate-800' : 'text-cyan-500 drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]'}`}>
+                <header className={`absolute top-0 w-full px-6 py-4 flex justify-between items-center z-40 border-b backdrop-blur-md transition-colors duration-500 ${isLightMode ? 'border-slate-200/80 bg-white/70 shadow-sm' : 'border-cyan-950/80 bg-black/60 shadow-[0_4px_20px_rgba(0,0,0,0.5)]'}`}>
+                    <div className="flex items-center gap-3">
+                        {/* Live Status Pulse */}
+                        <div className="relative flex items-center justify-center w-3.5 h-3.5">
+                            <div className={`absolute inset-0 rounded-full animate-ping opacity-75 ${isLightMode ? 'bg-cyan-500' : 'bg-cyan-400'}`} />
+                            <div className={`relative w-2.5 h-2.5 rounded-full ${isLightMode ? 'bg-cyan-600 shadow-[0_0_8px_rgba(6,182,212,0.6)]' : 'bg-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.9)]'}`} />
+                        </div>
+                        <div className="flex flex-col">
+                            <h1 className={`text-xl sm:text-2xl font-extrabold tracking-[0.25em] font-mono uppercase leading-tight transition-colors duration-500 ${isLightMode ? 'text-slate-900' : 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.4)]'}`}>
                                 AIO
                             </h1>
-                            <span className={`text-[10px] font-mono tracking-widest uppercase transition-colors duration-500 ${isLightMode ? 'text-slate-500' : 'text-cyan-600'}`}>
-                                Absolute Idiots Orchestra
+                            <span className={`text-[9px] sm:text-[10px] font-mono tracking-[0.22em] uppercase font-medium leading-tight transition-colors duration-500 ${isLightMode ? 'text-slate-500' : 'text-cyan-400/80'}`}>
+                                Absolute Idiots Orchestra 🎻
                             </span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        {queueCount > 0 && (
-                            <span className="text-xs font-mono px-2.5 py-1 rounded border border-amber-500/50 bg-amber-950/40 text-amber-400 tracking-widest uppercase animate-pulse">
-                                Queue: {queueCount}
-                            </span>
-                        )}
-
-                        <div className={`text-xs tracking-widest uppercase transition-colors duration-500 ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>
-                            System Online • Monitoring
+                    <div className="flex items-center gap-4 sm:gap-6">
+                        <div className={`hidden sm:flex items-center gap-2 text-[11px] font-mono tracking-[0.15em] uppercase px-3 py-1 rounded-full border transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-100/80 text-slate-600' : 'border-cyan-900/50 bg-cyan-950/40 text-cyan-400/90'}`}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            Live Orchestration • Autonomous
                         </div>
                         <button
                             onClick={() => setIsLightMode(!isLightMode)}
-                            className={`p-2 rounded-full border transition-all ${isLightMode ? 'border-slate-300 bg-white text-slate-600 hover:bg-slate-100' : 'border-cyan-800 bg-cyan-950/30 text-cyan-400 hover:bg-cyan-900/50'}`}
+                            className={`p-2 rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${isLightMode ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-sm' : 'border-cyan-800/80 bg-cyan-950/50 text-cyan-300 hover:bg-cyan-900/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]'}`}
                             title="Toggle Light Mode"
                         >
                             {isLightMode ? (
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
                                 </svg>
                             ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
                                 </svg>
                             )}
@@ -456,10 +455,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                 </header>
 
                 {/* Main Visualizer Area */}
-                <main className="flex-1 flex flex-col lg:flex-row overflow-hidden pt-[72px] pb-[40px] relative z-20">
+                <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden pt-[64px] lg:pt-[72px] pb-[32px] lg:pb-[40px] relative z-20">
                     {/* Brain Nodes Container */}
-                    <div className="flex-1 flex items-center justify-center p-2 lg:p-8 overflow-y-auto">
-                        <div className="grid grid-cols-2 gap-2 md:gap-8 lg:gap-16 w-full max-w-4xl justify-items-center">
+                    <div className="flex-1 min-h-0 min-w-0 flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-hidden h-full">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-8 sm:gap-y-10 lg:gap-x-12 lg:gap-y-12 w-full max-w-3xl justify-items-center items-center my-auto">
                             {(() => {
                                 const anyActive = Object.values(brains).some(b => b.status === 'executing' || b.status === 'thinking');
                                 return Object.entries(brains).map(([key, brain]) => (
