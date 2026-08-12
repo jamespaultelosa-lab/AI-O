@@ -520,10 +520,6 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                         ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-300' : 'bg-cyan-950 border border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]')
                                         : (isLightMode ? 'text-slate-400 hover:text-slate-600' : 'text-cyan-700 hover:text-cyan-400')
                                         }`}
-                                    className={`px-3 py-1 text-[11px] font-bold tracking-wider rounded uppercase transition-all ${activeTab === 'thoughts'
-                                        ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-300' : 'bg-cyan-950 border border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]')
-                                        : (isLightMode ? 'text-slate-400 hover:text-slate-600' : 'text-cyan-700 hover:text-cyan-400')
-                                        }`}
                                 >
                                     Thought Stream
                                 </button>
@@ -633,10 +629,6 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                                             ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 shadow-sm'
                                                                             : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]'
                                                                             }`}
-                                                                        className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isLightMode
-                                                                            ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 shadow-sm'
-                                                                            : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]'
-                                                                            }`}
                                                                     >
                                                                         {opt}
                                                                     </button>
@@ -665,10 +657,6 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                 memories.map((mem) => (
                                     <div
                                         key={mem.id}
-                                        className={`p-3 rounded-lg border transition-all duration-300 ${isLightMode
-                                            ? 'bg-white border-purple-200 hover:border-purple-300 shadow-sm'
-                                            : 'bg-purple-950/20 border-purple-900/50 hover:border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.15)]'
-                                            }`}
                                         className={`p-3 rounded-lg border transition-all duration-300 ${isLightMode
                                             ? 'bg-white border-purple-200 hover:border-purple-300 shadow-sm'
                                             : 'bg-purple-950/20 border-purple-900/50 hover:border-purple-500/60 shadow-[0_0_15px_rgba(168,85,247,0.15)]'
