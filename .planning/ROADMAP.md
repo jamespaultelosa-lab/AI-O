@@ -26,3 +26,18 @@
 3. The conversation involves healthy, constructive deliberation (no infinite argument loops).
 
 ---
+
+## Phase 3: Caveman Prompt Transport
+**Goal:** Preserve complete user requests in the UI while reducing backend prompt payloads with a separate Caveman-compressed representation.
+**Mode:** mvp
+
+**Requirements:**
+- TOKEN-01
+
+**Success Criteria:**
+1. Submitting a request creates an immediate UI message containing the complete original text.
+2. The dispatch request contains both the original display text and a separate compressed task text.
+3. Laravel persists/broadcasts the original display text, while watcher and brain orchestration receive only the compressed task text (plus required attachment metadata).
+4. Compression preserves protected literal regions, including code, URLs, paths, commands, and numeric values.
+
+---

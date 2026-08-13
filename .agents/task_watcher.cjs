@@ -35,7 +35,11 @@ function sendWebhook(endpoint, data) {
     });
 }
 
-const PID_FILE = path.resolve(__dirname, 'watcher.pid');
+fs.mkdirSync(IPC_DIRECTORY, { recursive: true });
+
+// Keep mutable runtime state in Laravel's writable storage area rather than
+// beside tracked agent source files.
+const PID_FILE = path.join(IPC_DIRECTORY, 'watcher.pid');
 
 if (fs.existsSync(PID_FILE)) {
     try {
@@ -59,10 +63,8 @@ process.on('exit', () => {
     } catch (e) { }
 });
 
-fs.mkdirSync(IPC_DIRECTORY, { recursive: true });
-
 if (!fs.existsSync(TASK_FILE)) {
-    fs.writeFileSync(TASK_FILE, JSON.stringify({ task: null, timestamp: null }));
+    fs.writeFileSync(TASK_FILE, JSON.stringify({ display_task: null, transport_task: null, timestamp: null }));
 }
 if (!fs.existsSync(QUEUE_FILE)) {
     fs.writeFileSync(QUEUE_FILE, JSON.stringify([]));
@@ -75,6 +77,23 @@ console.log('Watching for new tasks at:', QUEUE_FILE);
 
 let lastTimestamp = null;
 let isProcessing = false;
+
+function normalizeTaskPayload(payload) {
+    if (!payload
+        || typeof payload.display_task !== 'string' || payload.display_task.trim().length === 0
+        || typeof payload.transport_task !== 'string' || payload.transport_task.trim().length === 0
+        || typeof payload.timestamp !== 'string' || payload.timestamp.length === 0) {
+        return null;
+    }
+
+    return {
+        display_task: payload.display_task,
+        transport_task: payload.transport_task,
+        images: Array.isArray(payload.images) ? payload.images.filter((image) => typeof image === 'string') : [],
+        assigned_model: typeof payload.assigned_model === 'string' ? payload.assigned_model : '',
+        timestamp: payload.timestamp,
+    };
+}
 
 async function processQueueOrPending() {
     if (isProcessing) return;
@@ -89,7 +108,7 @@ async function processQueueOrPending() {
             try { queue = JSON.parse(queueContent); } catch (e) { }
 
             if (Array.isArray(queue) && queue.length > 0) {
-                taskData = queue.shift(); // FIFO dequeue
+                taskData = normalizeTaskPayload(queue.shift()); // FIFO dequeue
                 fs.writeFileSync(QUEUE_FILE, JSON.stringify(queue, null, 2));
             }
         }
@@ -99,16 +118,17 @@ async function processQueueOrPending() {
             const pendingContent = fs.readFileSync(TASK_FILE, 'utf-8');
             try {
                 const pending = JSON.parse(pendingContent);
-                if (pending.task && pending.timestamp && pending.timestamp !== lastTimestamp) {
-                    taskData = pending;
-                    fs.writeFileSync(TASK_FILE, JSON.stringify({ task: null, timestamp: null }));
+                const normalizedPending = normalizeTaskPayload(pending);
+                if (normalizedPending && normalizedPending.timestamp !== lastTimestamp) {
+                    taskData = normalizedPending;
+                    fs.writeFileSync(TASK_FILE, JSON.stringify({ display_task: null, transport_task: null, timestamp: null }));
                 }
             } catch (e) { }
         }
 
-        if (taskData && taskData.task && taskData.timestamp !== lastTimestamp) {
+        if (taskData && taskData.transport_task && taskData.timestamp !== lastTimestamp) {
             lastTimestamp = taskData.timestamp;
-            console.log('NEW_TASK_RECEIVED:', JSON.stringify(taskData));
+            console.log('NEW_TASK_RECEIVED:', taskData.timestamp);
             if (taskData.assigned_model) {
                 console.log(`\n======================================================`);
                 console.log(`[SYSTEM ROUTER] Recommended Model: ${taskData.assigned_model}`);
@@ -125,7 +145,7 @@ async function processQueueOrPending() {
             }
 
             // Clear pending_task.json to avoid re-triggering
-            fs.writeFileSync(TASK_FILE, JSON.stringify({ task: null, timestamp: null }));
+            fs.writeFileSync(TASK_FILE, JSON.stringify({ display_task: null, transport_task: null, timestamp: null }));
 
             await orchestrate(taskData);
         }
@@ -149,3 +169,5 @@ if (fs.existsSync(TASK_FILE)) {
 if (fs.existsSync(ABORT_FILE)) {
     fs.watch(ABORT_FILE, () => cancelActiveTask());
 }
+
+module.exports = { normalizeTaskPayload };

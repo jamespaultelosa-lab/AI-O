@@ -13,7 +13,9 @@ use Illuminate\Validation\ValidationException;
 
 class TaskDispatcherController extends Controller
 {
-    public const TASK_TEXT_MAX_LENGTH = 10000;
+    public const DISPLAY_TASK_MAX_LENGTH = 10000;
+
+    public const TRANSPORT_TASK_MAX_LENGTH = 10000;
 
     private const MAX_IMAGES = 5;
 
@@ -46,32 +48,35 @@ class TaskDispatcherController extends Controller
 
         // Heavy difficulty task
         if ($wordCount > 60 || $heavyScore >= 2) {
-            return 'opus';
+            return 'gpt-5.6-sol (high)';
         }
 
         // Medium difficulty task
         if ($wordCount > 20 || $heavyScore > 0 || $mediumScore >= 2) {
-            return 'gemini 3.1 pro(high)';
+            return 'gpt-5.6-terra (medium)';
         }
 
         // Default light task
-        return 'gemini 3.6 flash(high)';
+        return 'gpt-5.6-terra (low)';
     }
 
     public function dispatch(Request $request, TaskIntentDiscernment $intentDiscernment, BrainMessageStore $messageStore)
     {
-        $request->validate([
-            'task' => ['required', 'string', 'max:'.self::TASK_TEXT_MAX_LENGTH],
+        $validated = $request->validate([
+            'display_task' => ['required', 'string', 'min:1', 'max:'.self::DISPLAY_TASK_MAX_LENGTH],
+            'task' => ['required', 'string', 'min:1', 'max:'.self::TRANSPORT_TASK_MAX_LENGTH],
             'images' => ['sometimes', 'array', 'max:'.self::MAX_IMAGES],
         ]);
 
-        $task = $request->input('task');
-        $rawImages = $request->input('images', []);
+        $displayTask = $validated['display_task'];
+        $transportTask = $validated['task'];
+        $rawImages = $validated['images'] ?? [];
         $this->validateImageInputs($rawImages);
 
-        $intent = $intentDiscernment->decide($task);
-        if ($intent === TaskIntentDiscernment::CASUAL && count($rawImages) === 0) {
-            $messageStore->record('USER', $task);
+        $intent = $intentDiscernment->decide($displayTask);
+        $isGroupAddress = preg_match('/\b(guys|everyone|team|bois|brains|all)\b/ui', $displayTask) === 1;
+        if ($intent === TaskIntentDiscernment::CASUAL && ! $isGroupAddress && count($rawImages) === 0) {
+            $messageStore->record('USER', $displayTask);
 
             $casualResponse = 'Hello! How can I help?';
             $messageStore->record('Architect', $casualResponse);
@@ -80,15 +85,15 @@ class TaskDispatcherController extends Controller
             return response()->json([
                 'status' => 'success',
                 'mode' => TaskIntentDiscernment::CASUAL,
-                'task' => $task,
+                'task' => $displayTask,
                 'queue_position' => 0,
             ]);
         }
 
-        $assignedModel = $this->analyzeTaskComplexity($task);
+        $assignedModel = $this->analyzeTaskComplexity($displayTask);
 
         // Log the task
-        Log::info('Task dispatched from F.A.I.S. Command Center: '.$task.' [Model: '.$assignedModel.']');
+        Log::info('Task dispatched from F.A.I.S. Command Center: '.$displayTask.' [Model: '.$assignedModel.']');
 
         $images = [];
         if (is_array($rawImages) && count($rawImages) > 0) {
@@ -115,14 +120,9 @@ class TaskDispatcherController extends Controller
             }
         }
 
-        $taskMessageWithImages = $task;
-        if (count($images) > 0) {
-            $taskMessageWithImages .= ' [IMAGES: '.implode(' :: ', $images).']';
-        }
-
         $newTaskPayload = [
-            'task' => $taskMessageWithImages,
-            'raw_task' => $task,
+            'display_task' => $displayTask,
+            'transport_task' => $transportTask,
             'images' => $images,
             'assigned_model' => $assignedModel,
             'timestamp' => now()->toIso8601String(),
@@ -149,13 +149,13 @@ class TaskDispatcherController extends Controller
         }
 
         // Save USER message to database
-        $messageStore->record('USER', $taskMessageWithImages);
+        $messageStore->record('USER', $displayTask);
 
         $queueCount = count($queue);
         $queueNote = $queueCount > 1 ? " (Queued as #$queueCount)" : '';
 
         // Broadcast acknowledgment
-        $systemMsg = "**Task Received: \"$task\" [Routed to: $assignedModel]$queueNote**";
+        $systemMsg = "**Task Received: \"$displayTask\" [Routed to: $assignedModel]$queueNote**";
         $messageStore->record('SYSTEM', $systemMsg);
         event(new BrainMessageBroadcast('SYSTEM', $systemMsg));
 
@@ -163,7 +163,7 @@ class TaskDispatcherController extends Controller
             'status' => 'success',
             'message' => 'Task dispatched successfully',
             'mode' => TaskIntentDiscernment::ACTIONABLE,
-            'task' => $task,
+            'task' => $displayTask,
             'assigned_model' => $assignedModel,
             'queue_position' => $queueCount,
         ]);
@@ -311,7 +311,9 @@ class TaskDispatcherController extends Controller
         $decisions[] = ['id' => $approvalId, 'decision' => $request->string('decision')->value(), 'timestamp' => now()->toIso8601String()];
         file_put_contents($file, json_encode(array_slice($decisions, -100), JSON_PRETTY_PRINT), LOCK_EX);
 
-        $messageStore->record('SYSTEM', sprintf('Approval %s: %s.', $request->string('decision')->value(), $approvalId));
+        $message = sprintf('Approval %s: %s.', $request->string('decision')->value(), $approvalId);
+        $messageStore->record('SYSTEM', $message);
+        event(new BrainMessageBroadcast('SYSTEM', $message));
 
         return response()->json(['status' => 'success']);
     }

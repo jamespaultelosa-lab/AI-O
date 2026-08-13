@@ -5,6 +5,7 @@
 ### Core System
 - [ ] **CHAT-01**: Brains can intelligently differentiate between casual chat and actionable tasks
 - [ ] **CHAT-02**: Brains generate dynamic, unscripted collaborative dialogue before executing tasks
+- [ ] **TOKEN-01**: The UI retains and displays the complete user request while the backend orchestration pipeline receives a separate Caveman-compressed task representation
 
 ## v2 Requirements (Deferred)
 - [ ] **AUTH-01**: User can create account with email/password
@@ -16,3 +17,4 @@
 ## Traceability
 - **CHAT-01** → Phase 1: IPC Discernment
 - **CHAT-02** → Phase 2: Dynamic Persona Stream
+- **TOKEN-01** → Phase 3: Caveman Prompt Transport

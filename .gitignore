@@ -27,7 +27,12 @@ Homestead.yaml
 Thumbs.db
 
 # FAIS Brains temp & config files
-/.agents
+# /.agents/*
+!/.agents/brain_orchestrator.cjs
+!/.agents/codex_brain_pool.cjs
+!/.agents/vault_learning.cjs
 /.agents/pending_task.json
 /.agents/*.lock
 /.agents/thoughts*.txt
+/.agents/skills/
+# /.engram

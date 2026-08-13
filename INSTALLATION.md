@@ -34,7 +34,8 @@ Welcome to **AIO** (**A**bsolute **I**diots **O**rchestra)! This guide will help
 4. **Configure Obsidian Vault (Important for cross-workstation sync)**
    Open the `.env` file and configure the path to where your local Obsidian vault is located on this specific machine:
    ```env
-   OBSIDIAN_VAULT_PATH="C:\Obsidian\Vault"
+   OBSIDIAN_VAULT_PATH='C:\Obsidian\Vault'
+   FAIS_PROJECT_ROOT='\\wsl.localhost\Ubuntu\home\dev-james\projects\fais-payroll-srs'
    ```
 
 5. **Run Migrations**
@@ -54,6 +55,50 @@ Boot up the Laravel backend and React/Vite frontend concurrently.
 composer run dev
 ```
 
+This command also starts the task watcher and Reverb. The watcher requires the
+versioned `.agents/brain_orchestrator.cjs` and `.agents/codex_brain_pool.cjs`
+modules, plus an authenticated `codex` CLI available on your PATH. Its mutable
+PID and task IPC state live under `storage/app/agent_ipc`.
+
+### Task payload contract
+
+The browser dispatch endpoint requires both `display_task` (complete user text)
+and `task` (compressed transport text). Existing non-UI clients must send both
+fields; the server deliberately rejects incomplete or legacy payloads before
+writing messages, attachments, or IPC files. Runtime IPC records use explicit
+`display_task` and `transport_task` fields, with image URLs held separately in
+`images`; do not place attachment markers in the visible user record.
+
+The watcher runs one long-lived Codex app-server process and retains one thread
+per brain, avoiding a cold CLI startup for every response. Routine brain turns
+time out after two minutes; bounded heavy consultations may run for up to ten
+minutes.
+
+Brief greetings addressed to the team (for example, `how are you guys?`) are
+sent to all four brain threads. Mention `archi`, `security`, `senior dev`, or
+`junior` to select a specific lead brain.
+
+The watcher selects a model per turn: Terra/low for light work, Terra/medium
+for normal work, and Sol/high for heavy multi-domain work. Override the
+`BRAIN_CODEX_LIGHT_*`, `BRAIN_CODEX_STANDARD_*`, or `BRAIN_CODEX_HEAVY_*`
+variables in `.env` when needed.
+
+Team greetings are limited to 30 seconds per brain. A timed-out turn is
+interrupted and the app server is reset automatically before the next request.
+
+## Obsidian Brain Context and Learnings
+
+Set `OBSIDIAN_VAULT_PATH` to the FAIS vault. On startup, each persistent brain
+thread reads its persona, relevant rules/checklists, mistakes, and learnings.
+After substantive work, it may create a private evidence-based learning in
+`Brains/<role>/Learnings.md`. Greetings, failed turns, duplicate observations,
+unverified claims, and text containing credential-like values are not written.
+If the vault is unavailable, the task still runs without vault context.
+
+On Windows, the watcher also detects Codex bundled with Antigravity. If Codex
+lives elsewhere, set `CODEX_BIN` to the full path of `codex.exe` before running
+`composer run dev`.
+
 ### Terminal 2: Real-Time WebSocket Server (Reverb)
 Powers live animations and thought stream broadcasts in the AIO Command Center UI.
 ```bash
@@ -72,4 +117,6 @@ node .agents/task_watcher.cjs
 
 - **Tasks stuck on "Forwarding to AI agent..."**: Ensure **Terminal 3** (Task Watcher) is running.
 - **Brain UI not animating / no real-time updates**: Ensure **Terminal 2** (Reverb) is running on port 8081.
-
+- **Watcher exits with `Cannot find module './brain_orchestrator.cjs'`**: Restore the
+  tracked `.agents/brain_orchestrator.cjs` and `.agents/codex_brain_pool.cjs` files;
+  they provide task routing and cancellable Codex execution.

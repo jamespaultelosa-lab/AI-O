@@ -43,7 +43,7 @@ When a message arrives from the watcher, you (the AI agent) must first discern w
 
 12. **Context Engine Pre-Flight:** When given a new task, always read the Obsidian Vault (`ARCHITECTURE.md`) and any generated architecture maps first. You must ensure you have the full structural context of the FAIS project before formulating a solution or making code changes.
 
-13. **Mistakes Log:** Whenever you make a mistake or uncover a bug in the system, you MUST document it in the Obsidian Vault's `Mistakes Log.md` (located at `C:\Users\ICTDO-James\Documents\Fais Project\FAIS\FAIS Payroll Documentation\Senior Dev Brain\Lessons & Memory\Mistakes Log.md`). Create a new MST-XXX entry detailing what went wrong, the root cause, and the fix, so it is never repeated.
+13. **Mistakes Log:** Whenever you make a mistake or uncover a bug in the system, you MUST document it in the Obsidian Vault's `Mistakes Log.md`. Create a new MST-XXX entry detailing what went wrong, the root cause, and the fix, so it is never repeated.
 
 14. **Obsidian Vault Ownership:** The Architect and Security personas are strictly responsible for maintaining the freshness and integrity of the Obsidian Vault. They must actively monitor, update, and enforce the accuracy of the Context Engine's outputs and all contextual documentation.
 
@@ -64,3 +64,7 @@ When a message arrives from the watcher, you (the AI agent) must first discern w
 19. **Single Vault Output File (No Redundancy):** The team MUST NOT generate redundant duplicate markdown files in both the workspace root and Obsidian Vault. When markdown output is required (e.g. major audits or post-mortems), generate ONLY ONE single file directly in the Obsidian Vault (`Docs/`).
 
 20. **Implementation Plan First for Features:** For any feature design, system enhancement, or workflow addition, the team MUST create an `implementation_plan.md` artifact for interactive user review instead of creating standalone markdown reading files.
+
+21. **Completion Documentation:** After every successful task, update the relevant existing project documentation with the change, verification performed, and any material operational caveat. Keep the record concise and avoid duplicate documents.
+
+22. **Architecture and Startup Documentation:** Whenever a change affects runtime architecture, process ownership, startup, configuration, or operational paths, update both `ARCHITECTURE.md` and `INSTALLATION.md` before declaring the task complete.

@@ -1,0 +1,22 @@
+{
+  "ecosystem": "npm",
+  "config": {
+    "exa_search": false,
+    "brave_search": false,
+    "firecrawl": false,
+    "tavily_search": false
+  },
+  "questions": [
+    {
+      "text": "Laravel 13 request validation behavior and validation before controller side effects",
+      "kind": "docs",
+      "library": "laravel",
+      "version": "13"
+    },
+    {
+      "text": "Node.js built-in test runner command and assertions",
+      "kind": "docs",
+      "library": "node.js"
+    }
+  ]
+}

@@ -24,6 +24,7 @@ Internal developers and users interacting with the FAIS system who need a respon
 - [ ] **Conscious Persona Stream:** Implement logic to generate dynamic, unscripted collaborative dialogue between distinct personas (Architect, Senior Dev, Junior Dev, Security) before task execution.
 - [ ] **Task vs. Casual Chat Discernment:** The system must differentiate between actionable tasks (requiring full execution sequence) and casual chat (e.g., "hello"), responding appropriately without triggering full task workflows for simple greetings.
 - [ ] **Healthy Deliberation:** Brains should disagree, correct each other, and debate constructively to arrive at the best solution autonomously.
+- [ ] **Token-Efficient Prompt Transport:** Preserve each full user message in the UI while sending a separate Caveman-compressed representation through the backend execution pipeline.
 
 ### Out of Scope
 

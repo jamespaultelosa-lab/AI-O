@@ -36,6 +36,14 @@ test('preserves every protected literal byte-for-byte', () => {
     for (const literal of literals) assert.ok(result.compressedTask.includes(literal), literal);
 });
 
+test('preserves an embedded CLI command including its internal whitespace', () => {
+    const command = 'npm    install package@1.2.3 now.';
+    const result = buildCavemanPromptTransport(`Please really make sure to ${command}`);
+
+    assert.equal(result.compressedTask, `Please ensure ${command}`);
+    assert.ok(result.compressedTask.includes(command));
+});
+
 test('returns the original text when code delimiters cannot be safely tokenized', () => {
     const displayTask = 'Please update `unfinished code';
     assert.deepEqual(buildCavemanPromptTransport(displayTask), { displayTask, compressedTask: displayTask });

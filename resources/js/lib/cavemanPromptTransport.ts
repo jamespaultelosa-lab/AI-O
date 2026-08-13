@@ -20,7 +20,7 @@ const TOKEN_PREFIX = '\uE000CAVEMAN_';
 const TOKEN_SUFFIX = '_\uE001';
 
 // Matches are ordered from widest to narrowest so protected literals do not overlap.
-const PROTECTED_LITERAL = /```[\s\S]*?```|`[^`\r\n]*`|\[IMAGES:\s*[\s\S]*?\]|(?:https?:\/\/|www\.)[^\s<>'"`]+|(?:\.?\.?\/|~\/|[A-Za-z]:\\)[^\s<>'"`]+|\$[A-Za-z_][A-Za-z0-9_]*|\b(?:[A-Z][A-Z0-9_]{2,})\b|\b\d+(?:\.\d+)+(?:[-+][A-Za-z0-9.-]+)?\b|\b\d+(?:\.\d+)?(?:%|px|ms|s|MB|GB)?\b|(?:^|(?<=[.;:!?]\s))\s*(?:npm|pnpm|yarn|git|node|php|composer|docker|kubectl|cargo|python(?:3)?|pip)\b[^\r\n]*/gm;
+const PROTECTED_LITERAL = /```[\s\S]*?```|`[^`\r\n]*`|\[IMAGES:\s*[\s\S]*?\]|(?:https?:\/\/|www\.)[^\s<>'"`]+|(?:\.?\.?\/|~\/|[A-Za-z]:\\)[^\s<>'"`]+|\$[A-Za-z_][A-Za-z0-9_]*|\b(?:[A-Z][A-Z0-9_]{2,})\b|\b\d+(?:\.\d+)+(?:[-+][A-Za-z0-9.-]+)?\b|\b\d+(?:\.\d+)?(?:%|px|ms|s|MB|GB)?\b|\b(?:npm|pnpm|yarn|git|node|php|composer|docker|kubectl|cargo|python(?:3)?|pip)\b[^\r\n]*/gm;
 
 function hasUnclosedDelimitedLiteral(input: string): boolean {
     const fenceCount = (input.match(/```/g) ?? []).length;
