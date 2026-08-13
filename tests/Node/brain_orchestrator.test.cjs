@@ -9,8 +9,32 @@ test('casual and routine messages select one lead brain', () => {
 
 test('actionable Brain identity enables structured option buttons', () => {
     const identity = orchestrator.buildIdentity('Senior_Dev', 'actionable', '');
-    assert.match(identity, /exactly \[OPTIONS: Option A :: Option B :: Option C\]/);
-    assert.match(identity, /do not emit this marker for straightforward tasks/);
+    assert.match(identity, /exact format: \[QUESTION: concise question\]\[OPTIONS: Option A :: Option B\]/);
+    assert.match(identity, /do not emit options for straightforward tasks/);
+    assert.match(identity, /Never assume a missing requirement/);
+    assert.match(identity, /ask the user one concise clarifying question/);
+});
+
+test('Git repository selection uses the project chosen in the UI', () => {
+    orchestrator.resetSelectedProject();
+    assert.equal(orchestrator.projectRootForTask('Push AI-O control project'), orchestrator.AIO_PROJECT_ROOT);
+    assert.equal(orchestrator.projectRootForTask('Commit and push'), orchestrator.AIO_PROJECT_ROOT);
+    const selectedIdentity = orchestrator.buildIdentity('Senior_Dev', 'actionable', '', orchestrator.AIO_PROJECT_ROOT, true);
+    assert.match(selectedIdentity, /Treat a selected follow-up action/);
+    orchestrator.resetSelectedProject();
+    assert.notEqual(orchestrator.projectRootForTask('Push FAIS Payroll project'), orchestrator.AIO_PROJECT_ROOT);
+    const identity = orchestrator.buildIdentity('Senior_Dev', 'actionable', '');
+    assert.match(identity, /Which repository should I use/);
+});
+
+test('resolved option answers retain the original task and do not repeat questions', () => {
+    orchestrator.resetSelectedProject();
+    assert.equal(orchestrator.taskWithDecisionContext('Prepare the release'), 'Prepare the release');
+    const contextual = orchestrator.taskWithDecisionContext('Which release branch?: main');
+    assert.match(contextual, /Original user request: Prepare the release/);
+    assert.match(contextual, /Which release branch\? main/);
+    assert.match(contextual, /do not ask the same questions again/);
+    assert.deepEqual(orchestrator.resolvedDecisionFromTask('Choose strategy?: Fast path'), { question: 'Choose strategy?', answer: 'Fast path' });
 });
 
 test('specialist messages select their relevant lead', () => {

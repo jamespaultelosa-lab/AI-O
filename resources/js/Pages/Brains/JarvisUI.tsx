@@ -389,6 +389,14 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         }
     };
 
+    const resolveApproval = async (approvalId: string, decision: 'accept' | 'decline') => {
+        try {
+            await axios.post(`/api/brain/approvals/${approvalId}`, { decision });
+        } catch (err) {
+            console.error('Failed to resolve approval', err);
+        }
+    };
+
     useEffect(() => {
         const checkQueue = async () => {
             try {
@@ -566,7 +574,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                     )}
                                     {messages.slice(-visibleCount).map((msg) => {
                                         let cleanText = msg.text.replace('[DONE] ', '');
-                                        let options: string[] = [];
+                                        let optionGroups: { question?: string, options: string[] }[] = [];
+                                        const approvalMatch = cleanText.match(/\[APPROVAL:([a-z0-9-]+)\]/i);
+                                        const approvalId = approvalMatch?.[1];
+                                        if (approvalId) cleanText = cleanText.replace(/\s*\[APPROVAL:[a-z0-9-]+\]/i, '').trim();
 
                                         let imageList: string[] = [];
 
@@ -577,10 +588,20 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                             cleanText = cleanText.replace(/\[IMAGES:\s*(.+?)\]/i, '').trim();
                                         }
 
-                                        // Parse out [OPTIONS: A :: B :: C]
+                                        // Parse multiple decision groups: [QUESTION: ...][OPTIONS: A :: B]
+                                        const groupedOptionsPattern = /\[QUESTION:\s*(.+?)\]\s*\[OPTIONS:\s*(.+?)\]/gi;
+                                        let groupedMatch: RegExpExecArray | null;
+                                        while ((groupedMatch = groupedOptionsPattern.exec(cleanText)) !== null) {
+                                            const groupOptions = groupedMatch[2].split('::').map(o => o.trim()).filter(Boolean);
+                                            if (groupOptions.length > 0) optionGroups.push({ question: groupedMatch[1].trim(), options: groupOptions });
+                                        }
+                                        cleanText = cleanText.replace(groupedOptionsPattern, '').trim();
+
+                                        // Parse the legacy single group: [OPTIONS: A :: B :: C]
                                         const optionsMatch = cleanText.match(/\[OPTIONS:\s*(.+?)\]/i);
                                         if (optionsMatch) {
-                                            options = optionsMatch[1].split('::').map(o => o.trim()).filter(Boolean);
+                                            const options = optionsMatch[1].split('::').map(o => o.trim()).filter(Boolean);
+                                            if (options.length > 0) optionGroups.push({ options });
                                             cleanText = cleanText.replace(/\[OPTIONS:\s*(.+?)\]/i, '').trim();
                                         }
 
@@ -620,21 +641,30 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                             </div>
                                                         )}
 
-                                                        {options.length > 0 && (
+                                                        {optionGroups.map((group, groupIndex) => (
+                                                            <div key={groupIndex} className="mt-3">
+                                                                {group.question && <p className={`mb-1.5 text-[10px] font-bold ${isLightMode ? 'text-slate-600' : 'text-cyan-200'}`}>{group.question}</p>}
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {group.options.map((opt, idx) => (
+                                                                        <button
+                                                                            key={idx}
+                                                                            onClick={() => dispatchTask(group.question ? `${group.question}: ${opt}` : opt)}
+                                                                            disabled={isSubmitting}
+                                                                            className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isLightMode
+                                                                                ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 shadow-sm'
+                                                                                : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]'
+                                                                                }`}
+                                                                        >
+                                                                            {opt}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        {approvalId && (
                                                             <div className="mt-3 flex flex-wrap gap-2">
-                                                                {options.map((opt, idx) => (
-                                                                    <button
-                                                                        key={idx}
-                                                                        onClick={() => dispatchTask(opt)}
-                                                                        disabled={isSubmitting}
-                                                                        className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isLightMode
-                                                                            ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 shadow-sm'
-                                                                            : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]'
-                                                                            }`}
-                                                                    >
-                                                                        {opt}
-                                                                    </button>
-                                                                ))}
+                                                                <button onClick={() => resolveApproval(approvalId, 'accept')} disabled={isSubmitting} className="px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border border-green-500/60 bg-green-950/40 text-green-300 hover:bg-green-900/70 disabled:opacity-50">Approve</button>
+                                                                <button onClick={() => resolveApproval(approvalId, 'decline')} disabled={isSubmitting} className="px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border border-red-500/60 bg-red-950/40 text-red-300 hover:bg-red-900/70 disabled:opacity-50">Deny</button>
                                                             </div>
                                                         )}
                                                     </div>

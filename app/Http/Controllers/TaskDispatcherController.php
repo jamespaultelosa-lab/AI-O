@@ -239,6 +239,10 @@ class TaskDispatcherController extends Controller
         $queueFile = $this->agentIpcPath('task_queue.json');
         file_put_contents($queueFile, json_encode([]));
 
+        // Signal the watcher to interrupt any active Codex turn, not just queued work.
+        $abortFile = $this->agentIpcPath('abort_task.json');
+        file_put_contents($abortFile, json_encode(['timestamp' => now()->toIso8601String()]));
+
         // 2. Remove pending task file and speaking lock
         $pendingFile = $this->agentIpcPath('pending_task.json');
         if (file_exists($pendingFile)) {
@@ -292,6 +296,24 @@ class TaskDispatcherController extends Controller
     public function getHistory(BrainMessageStore $messageStore)
     {
         return response()->json($messageStore->recent());
+    }
+
+    public function resolveApproval(Request $request, string $approvalId, BrainMessageStore $messageStore)
+    {
+        $request->validate(['decision' => ['required', 'in:accept,decline']]);
+        if (! preg_match('/^approval-[a-z0-9-]+$/i', $approvalId)) {
+            throw ValidationException::withMessages(['approvalId' => 'Invalid approval request.']);
+        }
+
+        $file = $this->agentIpcPath('approval_decisions.json');
+        $existing = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
+        $decisions = is_array($existing) ? $existing : [];
+        $decisions[] = ['id' => $approvalId, 'decision' => $request->string('decision')->value(), 'timestamp' => now()->toIso8601String()];
+        file_put_contents($file, json_encode(array_slice($decisions, -100), JSON_PRETTY_PRINT), LOCK_EX);
+
+        $messageStore->record('SYSTEM', sprintf('Approval %s: %s.', $request->string('decision')->value(), $approvalId));
+
+        return response()->json(['status' => 'success']);
     }
 
     private function agentIpcPath(string $filename): string

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/brain/dispatch', [TaskDispatcherController::class, 'dispatch']);
 Route::get('/brain/history', [TaskDispatcherController::class, 'getHistory']);
+Route::post('/brain/approvals/{approvalId}', [TaskDispatcherController::class, 'resolveApproval']);
 
 Route::post('/webhook/brain-status', function (Request $request) {
     $request->validate([

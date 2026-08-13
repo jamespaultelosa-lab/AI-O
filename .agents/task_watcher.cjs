@@ -2,11 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const { execSync } = require('child_process');
-const { orchestrate } = require('./brain_orchestrator.cjs');
+const { cancelActiveTask, orchestrate } = require('./brain_orchestrator.cjs');
 
 const IPC_DIRECTORY = path.resolve(__dirname, '..', 'storage', 'app', 'agent_ipc');
 const TASK_FILE = path.join(IPC_DIRECTORY, 'pending_task.json');
 const QUEUE_FILE = path.join(IPC_DIRECTORY, 'task_queue.json');
+const ABORT_FILE = path.join(IPC_DIRECTORY, 'abort_task.json');
 
 function sendWebhook(endpoint, data) {
     return new Promise((resolve) => {
@@ -65,6 +66,9 @@ if (!fs.existsSync(TASK_FILE)) {
 }
 if (!fs.existsSync(QUEUE_FILE)) {
     fs.writeFileSync(QUEUE_FILE, JSON.stringify([]));
+}
+if (!fs.existsSync(ABORT_FILE)) {
+    fs.writeFileSync(ABORT_FILE, JSON.stringify({ timestamp: null }));
 }
 
 console.log('Watching for new tasks at:', QUEUE_FILE);
@@ -141,4 +145,7 @@ if (fs.existsSync(QUEUE_FILE)) {
 }
 if (fs.existsSync(TASK_FILE)) {
     fs.watch(TASK_FILE, () => processQueueOrPending());
+}
+if (fs.existsSync(ABORT_FILE)) {
+    fs.watch(ABORT_FILE, () => cancelActiveTask());
 }
