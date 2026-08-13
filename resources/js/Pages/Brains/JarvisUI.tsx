@@ -4,6 +4,7 @@ import BrainNode from '@/Components/BrainNode';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import axios from 'axios';
+import { buildBrainDispatchPayload } from '@/lib/cavemanPromptTransport';
 
 // Setup global Pusher for Echo
 (window as any).Pusher = Pusher;
@@ -210,9 +211,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         setIsSubmitting(true);
 
         const imagesToUpload = attachedImages.map(img => img.dataUrl);
+        const payload = buildBrainDispatchPayload(taskText, imagesToUpload);
         setAttachedImages([]);
 
-        let userMsgText = taskText;
+        let userMsgText = payload.display_task;
         if (imagesToUpload.length > 0) {
             userMsgText += ' [IMAGES: ' + imagesToUpload.join(' :: ') + ']';
         }
@@ -229,12 +231,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         }
 
         try {
-            await axios.post('/api/brain/dispatch', {
-                task: taskText,
-                images: imagesToUpload
-            });
+            await axios.post('/api/brain/dispatch', payload);
         } catch (error) {
             console.error("Failed to dispatch task", error);
+            setTaskInput(payload.display_task);
             setMessages(prev => [...prev, {
                 id: Date.now() + Math.random(),
                 brain: 'SYSTEM',

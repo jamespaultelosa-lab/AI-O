@@ -14,7 +14,7 @@ function loadTransport() {
     return module.exports;
 }
 
-const { buildCavemanPromptTransport } = loadTransport();
+const { buildBrainDispatchPayload, buildCavemanPromptTransport } = loadTransport();
 
 test('compacts ordinary prose deterministically while retaining the display text', () => {
     const displayTask = 'You should really make sure to update the dashboard in order to fix the issue.';
@@ -39,4 +39,13 @@ test('preserves every protected literal byte-for-byte', () => {
 test('returns the original text when code delimiters cannot be safely tokenized', () => {
     const displayTask = 'Please update `unfinished code';
     assert.deepEqual(buildCavemanPromptTransport(displayTask), { displayTask, compressedTask: displayTask });
+});
+
+test('dispatch payload keeps original display text and a separate compact transport field', () => {
+    const displayTask = 'You should really make sure to update the dashboard.';
+    const payload = buildBrainDispatchPayload(displayTask, ['data:image/png;base64,ABC']);
+
+    assert.equal(payload.display_task, displayTask);
+    assert.notEqual(payload.task, displayTask);
+    assert.deepEqual(payload.images, ['data:image/png;base64,ABC']);
 });

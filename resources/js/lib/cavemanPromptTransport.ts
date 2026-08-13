@@ -10,6 +10,12 @@ export interface CavemanPromptTransport {
     compressedTask: string;
 }
 
+export interface BrainDispatchPayload {
+    display_task: string;
+    task: string;
+    images: string[];
+}
+
 const TOKEN_PREFIX = '\uE000CAVEMAN_';
 const TOKEN_SUFFIX = '_\uE001';
 
@@ -60,4 +66,14 @@ export function buildCavemanPromptTransport(displayTask: string): CavemanPromptT
     }
 
     return { displayTask, compressedTask };
+}
+
+export function buildBrainDispatchPayload(displayTask: string, images: string[]): BrainDispatchPayload {
+    const transport = buildCavemanPromptTransport(displayTask);
+
+    return {
+        display_task: transport.displayTask,
+        task: transport.compressedTask,
+        images,
+    };
 }
