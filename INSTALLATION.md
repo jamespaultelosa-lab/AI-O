@@ -74,6 +74,11 @@ per brain, avoiding a cold CLI startup for every response. Routine brain turns
 time out after two minutes; bounded heavy consultations may run for up to ten
 minutes.
 
+The UI no longer emits a `SYSTEM` task-received notification. Instead, active
+brains publish safe, deduplicated lifecycle progress messages while Codex works.
+These messages intentionally exclude raw reasoning, commands, arguments, tool
+output, and paths.
+
 Brief greetings addressed to the team (for example, `how are you guys?`) are
 sent to all four brain threads. Mention `archi`, `security`, `senior dev`, or
 `junior` to select a specific lead brain.

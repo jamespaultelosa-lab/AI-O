@@ -110,9 +110,9 @@ class TaskDispatchDiscernmentTest extends TestCase
             'brain' => 'USER',
             'message' => 'make a new button',
         ]);
-        $this->assertDatabaseHas('brain_messages', ['brain' => 'SYSTEM']);
-        Event::assertDispatched(BrainMessageBroadcast::class, function ($event): bool {
-            return $event->brainName === 'SYSTEM' && str_contains($event->message, 'make a new button');
+        $this->assertDatabaseMissing('brain_messages', ['brain' => 'SYSTEM']);
+        Event::assertNotDispatched(BrainMessageBroadcast::class, function ($event): bool {
+            return $event->brainName === 'SYSTEM';
         });
     }
 

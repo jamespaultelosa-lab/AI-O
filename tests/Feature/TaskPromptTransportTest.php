@@ -56,8 +56,7 @@ class TaskPromptTransportTest extends TestCase
 
         $response->assertOk()->assertJsonPath('task', $displayTask);
         $this->assertDatabaseHas('brain_messages', ['brain' => 'USER', 'message' => $displayTask]);
-        $this->assertDatabaseHas('brain_messages', ['brain' => 'SYSTEM']);
-        $this->assertStringContainsString($displayTask, BrainMessage::query()->where('brain', 'SYSTEM')->value('message'));
+        $this->assertDatabaseMissing('brain_messages', ['brain' => 'SYSTEM']);
 
         $payload = json_decode(file_get_contents($this->queueFile), true)[0];
         $this->assertSame(['display_task', 'transport_task', 'images', 'assigned_model', 'timestamp'], array_keys($payload));

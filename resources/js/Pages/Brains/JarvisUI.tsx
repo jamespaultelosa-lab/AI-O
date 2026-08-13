@@ -19,17 +19,25 @@ interface JarvisUIProps {
     brains: Record<string, BrainData>;
 }
 
-const parseMarkdownBold = (input: string) => {
+const BACKGROUND_ACTIVITY_MESSAGES = new Set([
+    'Reviewing the task approach...',
+    'Running a workspace command...',
+    'Preparing workspace changes...',
+    'Using an integrated tool...',
+    'Checking referenced information...',
+]);
+
+const parseMarkdownBold = (input: string, isLightMode = false) => {
     const parts = input.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, idx) => {
         if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
-            return <strong key={idx} className="font-extrabold text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]">{part.slice(2, -2)}</strong>;
+            return <strong key={idx} className={`font-extrabold ${isLightMode ? 'text-cyan-800' : 'text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]'}`}>{part.slice(2, -2)}</strong>;
         }
         return part;
     });
 };
 
-const TypingMessage = ({ text, onComplete }: { text: string, onComplete?: () => void }) => {
+const TypingMessage = ({ text, onComplete, isLightMode = false }: { text: string, onComplete?: () => void, isLightMode?: boolean }) => {
     const [displayedText, setDisplayedText] = useState('');
 
     useEffect(() => {
@@ -54,7 +62,7 @@ const TypingMessage = ({ text, onComplete }: { text: string, onComplete?: () => 
         return () => clearInterval(intervalId);
     }, [text, onComplete]);
 
-    return <>{parseMarkdownBold(displayedText)}</>;
+    return <>{parseMarkdownBold(displayedText, isLightMode)}</>;
 };
 
 interface MemoryEntry {
@@ -82,7 +90,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
     const [autoScroll, setAutoScroll] = useState(true);
     const [taskInput, setTaskInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [sidebarWidth, setSidebarWidth] = useState(400);
+    const [sidebarWidth, setSidebarWidth] = useState(440);
     const [isLightMode, setIsLightMode] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('fais_theme') === 'light';
@@ -98,6 +106,17 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
     }, [isLightMode]);
 
     const getBrainColor = (brainName: string) => {
+        if (isLightMode) {
+            switch (brainName) {
+                case 'Architect': return 'text-purple-800';
+                case 'Senior_Dev': return 'text-blue-800';
+                case 'Junior_Dev': return 'text-green-800';
+                case 'Security': return 'text-red-800';
+                case 'USER': return 'text-amber-800 font-extrabold';
+                case 'SYSTEM': return 'text-slate-800 font-bold';
+                default: return 'text-cyan-800';
+            }
+        }
         switch (brainName) {
             case 'Architect': return 'text-purple-400';
             case 'Senior_Dev': return 'text-blue-400';
@@ -112,13 +131,13 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
     const getBrainBgColor = (brainName: string) => {
         if (isLightMode) {
             switch (brainName) {
-                case 'Architect': return 'bg-purple-100 border-purple-300';
-                case 'Senior_Dev': return 'bg-blue-100 border-blue-300';
-                case 'Junior_Dev': return 'bg-green-100 border-green-300';
-                case 'Security': return 'bg-red-100 border-red-300';
-                case 'USER': return 'bg-yellow-100 border-yellow-300';
-                case 'SYSTEM': return 'bg-slate-200 border-slate-300';
-                default: return 'bg-cyan-100 border-cyan-300';
+                case 'Architect': return 'bg-white/85 border-slate-200 border-l-4 border-l-purple-500';
+                case 'Senior_Dev': return 'bg-white/85 border-slate-200 border-l-4 border-l-blue-500';
+                case 'Junior_Dev': return 'bg-white/85 border-slate-200 border-l-4 border-l-emerald-500';
+                case 'Security': return 'bg-white/85 border-slate-200 border-l-4 border-l-red-500';
+                case 'USER': return 'bg-amber-50/90 border-amber-200 border-l-4 border-l-amber-500';
+                case 'SYSTEM': return 'bg-slate-100/90 border-slate-200 border-l-4 border-l-slate-500';
+                default: return 'bg-white/85 border-slate-200 border-l-4 border-l-cyan-500';
             }
         } else {
             switch (brainName) {
@@ -417,15 +436,16 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         <>
             <Head title="Absolute Idiots Orchestra" />
 
-            <div className={`h-screen w-full overflow-hidden flex flex-col relative font-mono transition-colors duration-500 ${isLightMode ? 'bg-slate-50 text-slate-800' : 'bg-black text-cyan-500'}`}>
+            <div className={`h-screen w-full overflow-hidden flex flex-col relative font-mono transition-colors duration-500 ${isLightMode ? 'bg-[#e8eef5] text-slate-900' : 'bg-[#030608] text-cyan-400'}`}>
 
                 {/* Aesthetic Dotted Grid Background */}
-                <div className={`absolute inset-0 [background-size:32px_32px] opacity-15 ${isLightMode ? 'bg-[radial-gradient(#94a3b8_1px,transparent_1px)]' : 'bg-[radial-gradient(#0891b2_1px,transparent_1px)]'}`} />
+                <div className={`absolute inset-0 [background-size:32px_32px] ${isLightMode ? 'bg-[radial-gradient(#94a3b8_1px,transparent_1px)] opacity-20' : 'bg-[radial-gradient(#0e7490_1px,transparent_1px)] opacity-15'}`} />
+                <div className={`absolute inset-0 pointer-events-none ${isLightMode ? 'bg-[radial-gradient(ellipse_at_22%_16%,rgba(14,165,233,0.08),transparent_35%),radial-gradient(ellipse_at_88%_88%,rgba(99,102,241,0.05),transparent_40%)]' : 'bg-[radial-gradient(ellipse_at_28%_40%,rgba(8,145,178,0.09),transparent_42%),radial-gradient(ellipse_at_82%_18%,rgba(59,130,246,0.07),transparent_30%)]'}`} />
                 {/* Radial fade mask to make it look focused in the center */}
-                <div className={`absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black_90%)] pointer-events-none z-10 ${isLightMode ? 'bg-slate-50' : 'bg-black'}`} />
+                <div className={`absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black_90%)] pointer-events-none z-10 ${isLightMode ? 'bg-[#e8eef5]/45' : 'bg-black'}`} />
 
                 {/* Header */}
-                <header className={`absolute top-0 w-full px-6 py-4 flex justify-between items-center z-40 border-b backdrop-blur-md transition-colors duration-500 ${isLightMode ? 'border-slate-200/80 bg-white/70 shadow-sm' : 'border-cyan-950/80 bg-black/60 shadow-[0_4px_20px_rgba(0,0,0,0.5)]'}`}>
+                <header className={`absolute top-0 w-full px-4 sm:px-6 py-4 flex justify-between items-center z-40 border-b backdrop-blur-xl transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-white/92 shadow-[0_8px_24px_rgba(15,23,42,0.08)]' : 'border-cyan-950/80 bg-[#030608]/80 shadow-[0_4px_24px_rgba(0,0,0,0.55)]'}`}>
                     <div className="flex items-center gap-3">
                         {/* Live Status Pulse */}
                         <div className="relative flex items-center justify-center w-3.5 h-3.5">
@@ -450,11 +470,12 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
 
                         <div className={`hidden sm:flex items-center gap-2 text-[11px] font-mono tracking-[0.15em] uppercase px-3 py-1 rounded-full border transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-100/80 text-slate-600' : 'border-cyan-900/50 bg-cyan-950/40 text-cyan-400/90'}`}>
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            Live Orchestration • Autonomous
+                            Live Orchestration <span aria-hidden="true">&bull;</span> Autonomous
                         </div>
                         <button
                             onClick={() => setIsLightMode(!isLightMode)}
-                            className={`p-2 rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${isLightMode ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-sm' : 'border-cyan-800/80 bg-cyan-950/50 text-cyan-300 hover:bg-cyan-900/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]'}`}
+                            aria-label={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
+                            className={`p-2 rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${isLightMode ? 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]' : 'border-cyan-800/80 bg-cyan-950/50 text-cyan-300 hover:bg-cyan-900/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]'}`}
                             title="Toggle Light Mode"
                         >
                             {isLightMode ? (
@@ -473,8 +494,14 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                 {/* Main Visualizer Area */}
                 <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden pt-[64px] lg:pt-[72px] pb-[32px] lg:pb-[40px] relative z-20">
                     {/* Brain Nodes Container */}
-                    <div className="flex-1 min-h-0 min-w-0 flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-hidden h-full">
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-8 sm:gap-y-10 lg:gap-x-12 lg:gap-y-12 w-full max-w-3xl justify-items-center items-center my-auto">
+                    <section className={`flex-1 min-h-0 min-w-0 flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-hidden h-full relative ${isLightMode ? 'bg-slate-100/35' : ''}`} aria-label="Orchestration map">
+                        <div className={`absolute left-5 top-4 sm:left-8 sm:top-6 z-20 ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.22em]">Orchestration map</p>
+                            <p className={`mt-1 text-[11px] tracking-wide ${isLightMode ? 'text-slate-500' : 'text-cyan-800'}`}>
+                                {Object.keys(brains).length} specialist agents <span aria-hidden="true">·</span> {isTaskActive ? 'activity in progress' : 'standing by'}
+                            </p>
+                        </div>
+                        <div className={`grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-8 sm:gap-y-10 lg:gap-x-12 lg:gap-y-12 w-full max-w-3xl justify-items-center items-center my-auto rounded-[2rem] ${isLightMode ? 'border border-slate-200/90 bg-white/72 shadow-[0_24px_64px_rgba(15,23,42,0.10)]' : ''}`}>
                             {(() => {
                                 const anyActive = Object.values(brains).some(b => b.status === 'executing' || b.status === 'thinking');
                                 return Object.entries(brains).map(([key, brain]) => (
@@ -488,11 +515,11 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                 ));
                             })()}
                         </div>
-                    </div>
+                    </section>
 
                     {/* Thought Stream Sidebar */}
                     <aside
-                        className={`border-t lg:border-t-0 lg:border-l backdrop-blur-md flex flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.5)] h-1/2 lg:h-full w-full lg:w-[var(--sidebar-width)] min-w-full lg:min-w-[300px] max-w-full lg:max-w-[800px] overflow-hidden relative transition-colors duration-500 ${isLightMode ? 'border-slate-300 bg-white/80' : 'border-cyan-900/50 bg-black/40'}`}
+                        className={`border-t lg:border-t-0 lg:border-l backdrop-blur-xl flex flex-col h-1/2 lg:h-full w-full lg:w-[var(--sidebar-width)] min-w-full lg:min-w-[340px] max-w-full lg:max-w-[800px] overflow-hidden relative transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-50/95 shadow-[-12px_0_36px_rgba(15,23,42,0.12)]' : 'border-cyan-900/50 bg-[#060b10]/80 shadow-[-10px_0_30px_rgba(0,0,0,0.45)]'}`}
                         style={{ '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties}
                     >
                         {/* Drag Handle */}
@@ -505,7 +532,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
 
                                 const onMouseMove = (moveEvent: MouseEvent) => {
                                     const deltaX = startX - moveEvent.clientX;
-                                    setSidebarWidth(Math.max(300, Math.min(800, startWidth + deltaX)));
+                                    setSidebarWidth(Math.max(340, Math.min(800, startWidth + deltaX)));
                                 };
 
                                 const onMouseUp = () => {
@@ -520,13 +547,13 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                             <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${isLightMode ? 'bg-slate-400' : 'bg-cyan-700'}`}></div>
                         </div>
 
-                        <div className={`p-2 border-b flex justify-between items-center transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-100/50' : 'border-cyan-900/50 bg-cyan-950/20'}`}>
+                        <div className={`p-2 border-b flex justify-between items-center transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-100/85' : 'border-cyan-900/50 bg-cyan-950/20'}`}>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setActiveTab('thoughts')}
                                     className={`px-3 py-1 text-[11px] font-bold tracking-wider rounded uppercase transition-all ${activeTab === 'thoughts'
-                                        ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-300' : 'bg-cyan-950 border border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]')
-                                        : (isLightMode ? 'text-slate-400 hover:text-slate-600' : 'text-cyan-700 hover:text-cyan-400')
+                                        ? (isLightMode ? 'bg-white text-slate-900 shadow-[0_2px_8px_rgba(15,23,42,0.08)] ring-1 ring-slate-200' : 'bg-cyan-950 border border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]')
+                                        : (isLightMode ? 'text-slate-500 hover:text-slate-800 hover:bg-white/70' : 'text-cyan-700 hover:text-cyan-400')
                                         }`}
                                 >
                                     Thought Stream
@@ -534,8 +561,8 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                 <button
                                     onClick={() => setActiveTab('memory')}
                                     className={`px-3 py-1 text-[11px] font-bold tracking-wider rounded uppercase transition-all flex items-center gap-1.5 ${activeTab === 'memory'
-                                        ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-300' : 'bg-purple-950 border border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.3)]')
-                                        : (isLightMode ? 'text-slate-400 hover:text-slate-600' : 'text-purple-700 hover:text-purple-400')
+                                        ? (isLightMode ? 'bg-white text-slate-900 shadow-[0_2px_8px_rgba(15,23,42,0.08)] ring-1 ring-slate-200' : 'bg-purple-950 border border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.3)]')
+                                        : (isLightMode ? 'text-slate-500 hover:text-slate-800 hover:bg-white/70' : 'text-purple-700 hover:text-purple-400')
                                         }`}
                                 >
                                     <span>Memory Vault</span>
@@ -560,7 +587,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                         </div>
                         {/* Thought Stream Scroll Container */}
                         <div
-                            className={`flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-track-transparent transition-colors duration-500 ${isLightMode ? 'scrollbar-thumb-slate-300' : 'scrollbar-thumb-cyan-900/50'} ${activeTab === 'thoughts' ? '' : 'hidden'}`}
+                            className={`flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 scrollbar-thin scrollbar-track-transparent transition-colors duration-500 ${isLightMode ? 'scrollbar-thumb-slate-300' : 'scrollbar-thumb-cyan-900/50'} ${activeTab === 'thoughts' ? '' : 'hidden'}`}
                             onScroll={handleScroll}
                         >
                             {messages.length === 0 ? (
@@ -605,15 +632,29 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                             cleanText = cleanText.replace(/\[OPTIONS:\s*(.+?)\]/i, '').trim();
                                         }
 
+                                        const isBackgroundActivity = BACKGROUND_ACTIVITY_MESSAGES.has(cleanText)
+                                            && !approvalId
+                                            && optionGroups.length === 0
+                                            && imageList.length === 0;
+
+                                        if (isBackgroundActivity) {
+                                            return (
+                                                <div key={msg.id} className={`flex items-center gap-2 px-1.5 py-1 text-[10px] tracking-wide ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>
+                                                    <span className={`h-1 w-1 rounded-full ${isLightMode ? 'bg-slate-400' : 'bg-cyan-700'}`} aria-hidden="true" />
+                                                    <span>{cleanText}</span>
+                                                </div>
+                                            );
+                                        }
+
                                         return (
-                                            <div key={msg.id} className={`text-[11px] leading-relaxed break-words p-3 rounded border transition-colors duration-500 ${getBrainBgColor(msg.brain)}`}>
+                                            <div key={msg.id} className={`text-xs leading-6 break-words p-3.5 rounded-lg border shadow-sm transition-colors duration-500 ${getBrainBgColor(msg.brain)}`}>
                                                 <div className="flex justify-between items-baseline mb-1">
                                                     <span className={`font-bold tracking-wider ${getBrainColor(msg.brain)}`}>[{msg.brain}]</span>
                                                     <div className="flex items-center gap-2">
                                                         <span className={`text-[9px] ${isLightMode ? 'text-slate-400' : 'text-cyan-800'}`}>{msg.time}</span>
                                                     </div>
                                                 </div>
-                                                <div className={`font-sans tracking-wide flex items-start gap-2 ${isLightMode ? 'text-slate-700' : 'text-cyan-100'}`}>
+                                                <div className={`font-sans tracking-normal flex items-start gap-2 ${isLightMode ? 'text-slate-700' : 'text-cyan-50'}`}>
                                                     <div className="mt-0.5 shrink-0">
                                                         {msg.text.startsWith('[DONE] ') ? (
                                                             <svg className="w-4 h-4 text-green-400 drop-shadow-[0_0_5px_rgba(74,222,128,0.8)] animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
@@ -624,7 +665,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                         )}
                                                     </div>
                                                     <div className="flex-1 w-full overflow-hidden">
-                                                        {msg.brain === 'USER' ? parseMarkdownBold(cleanText) : <TypingMessage text={cleanText} />}
+                                                        {msg.brain === 'USER' ? parseMarkdownBold(cleanText, isLightMode) : <TypingMessage text={cleanText} isLightMode={isLightMode} />}
 
 
                                                         {imageList.length > 0 && (
@@ -663,8 +704,8 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                         ))}
                                                         {approvalId && (
                                                             <div className="mt-3 flex flex-wrap gap-2">
-                                                                <button onClick={() => resolveApproval(approvalId, 'accept')} disabled={isSubmitting} className="px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border border-green-500/60 bg-green-950/40 text-green-300 hover:bg-green-900/70 disabled:opacity-50">Approve</button>
-                                                                <button onClick={() => resolveApproval(approvalId, 'decline')} disabled={isSubmitting} className="px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border border-red-500/60 bg-red-950/40 text-red-300 hover:bg-red-900/70 disabled:opacity-50">Deny</button>
+                                                                <button onClick={() => resolveApproval(approvalId, 'accept')} disabled={isSubmitting} className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border disabled:opacity-50 ${isLightMode ? 'border-green-700 bg-green-100 text-green-900 hover:bg-green-200' : 'border-green-500/60 bg-green-950/40 text-green-300 hover:bg-green-900/70'}`}>Approve</button>
+                                                                <button onClick={() => resolveApproval(approvalId, 'decline')} disabled={isSubmitting} className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border disabled:opacity-50 ${isLightMode ? 'border-red-700 bg-red-100 text-red-900 hover:bg-red-200' : 'border-red-500/60 bg-red-950/40 text-red-300 hover:bg-red-900/70'}`}>Deny</button>
                                                             </div>
                                                         )}
                                                     </div>
@@ -699,46 +740,46 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                             onClick={() => setExpandedMemory(expandedMemory === mem.id ? null : mem.id)}
                                         >
                                             <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                                <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded border ${isLightMode ? 'bg-purple-100 text-purple-900 border-purple-300' : 'bg-purple-500/20 text-purple-300 border-purple-500/30'}`}>
                                                     {mem.id}
                                                 </span>
-                                                <span className={`text-xs font-semibold tracking-wide ${isLightMode ? 'text-slate-800' : 'text-purple-200'}`}>
+                                                    <span className={`text-xs font-semibold tracking-wide ${isLightMode ? 'text-slate-800' : 'text-purple-200'}`}>
                                                     {mem.title}
                                                 </span>
                                             </div>
                                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${mem.severity === 'CRITICAL'
-                                                ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse'
+                                                ? (isLightMode ? 'bg-red-100 text-red-900 border border-red-400 animate-pulse' : 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse')
                                                 : mem.severity === 'HIGH'
-                                                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                                                    : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
+                                                    ? (isLightMode ? 'bg-amber-100 text-amber-900 border border-amber-400' : 'bg-amber-500/20 text-amber-400 border border-amber-500/40')
+                                                    : (isLightMode ? 'bg-cyan-100 text-cyan-900 border border-cyan-400' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40')
                                                 }`}>
                                                 {mem.severity}
                                             </span>
                                         </div>
 
                                         {expandedMemory === mem.id && (
-                                            <div className="mt-3 pt-3 border-t border-purple-900/30 space-y-2 text-[11px] font-sans">
+                                            <div className={`mt-3 pt-3 border-t space-y-2 text-[11px] font-sans ${isLightMode ? 'border-purple-200' : 'border-purple-900/30'}`}>
                                                 {mem.what_happened && (
                                                     <div>
-                                                        <span className="font-bold text-purple-400 uppercase tracking-wider block text-[10px]">What Happened:</span>
+                                                        <span className={`font-bold uppercase tracking-wider block text-[10px] ${isLightMode ? 'text-purple-800' : 'text-purple-400'}`}>What Happened:</span>
                                                         <p className={isLightMode ? 'text-slate-600' : 'text-purple-200/80'}>{mem.what_happened}</p>
                                                     </div>
                                                 )}
                                                 {mem.root_cause && (
                                                     <div>
-                                                        <span className="font-bold text-amber-400 uppercase tracking-wider block text-[10px]">Root Cause:</span>
+                                                        <span className={`font-bold uppercase tracking-wider block text-[10px] ${isLightMode ? 'text-amber-800' : 'text-amber-400'}`}>Root Cause:</span>
                                                         <p className={isLightMode ? 'text-slate-600' : 'text-amber-200/80'}>{mem.root_cause}</p>
                                                     </div>
                                                 )}
                                                 {mem.fix && (
                                                     <div>
-                                                        <span className="font-bold text-green-400 uppercase tracking-wider block text-[10px]">Fix Applied:</span>
+                                                        <span className={`font-bold uppercase tracking-wider block text-[10px] ${isLightMode ? 'text-green-800' : 'text-green-400'}`}>Fix Applied:</span>
                                                         <p className={isLightMode ? 'text-slate-600' : 'text-green-200/80'}>{mem.fix}</p>
                                                     </div>
                                                 )}
                                                 {mem.lesson && (
                                                     <div>
-                                                        <span className="font-bold text-cyan-400 uppercase tracking-wider block text-[10px]">Lesson Learned:</span>
+                                                        <span className={`font-bold uppercase tracking-wider block text-[10px] ${isLightMode ? 'text-cyan-800' : 'text-cyan-400'}`}>Lesson Learned:</span>
                                                         <p className={isLightMode ? 'text-slate-600' : 'text-cyan-200/80'}>{mem.lesson}</p>
                                                     </div>
                                                 )}
@@ -750,7 +791,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                         </div>
 
                         {/* Terminal Input */}
-                        <div className={`p-4 border-t transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-50' : 'border-cyan-900/50 bg-black/60'}`}>
+                        <div className={`p-4 border-t transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-100/90' : 'border-cyan-900/50 bg-black/60'}`}>
                             {/* Hidden File Input */}
                             <input
                                 type="file"
@@ -763,9 +804,9 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
 
                             {/* Thumbnail Preview Pills */}
                             {attachedImages.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mb-2 p-2 rounded border border-cyan-900/40 bg-cyan-950/30">
+                                <div className={`flex flex-wrap gap-2 mb-2 p-2 rounded-lg border ${isLightMode ? 'border-slate-200 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]' : 'border-cyan-900/40 bg-cyan-950/30'}`}>
                                     {attachedImages.map((img) => (
-                                        <div key={img.id} className="relative group flex items-center gap-1.5 p-1 rounded border border-cyan-500/40 bg-cyan-950/60 text-cyan-300 text-[10px]">
+                                        <div key={img.id} className={`relative group flex items-center gap-1.5 p-1 rounded border text-[10px] ${isLightMode ? 'border-cyan-300 bg-white text-cyan-900' : 'border-cyan-500/40 bg-cyan-950/60 text-cyan-300'}`}>
                                             <img src={img.dataUrl} alt={img.name} className="w-8 h-8 object-cover rounded" />
                                             <span className="max-w-[100px] truncate">{img.name}</span>
                                             <button
@@ -799,7 +840,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={isSubmitting}
                                         className={`p-2 rounded-md border text-xs shrink-0 transition-all cursor-pointer disabled:opacity-40 ${isLightMode
-                                            ? 'bg-white border-slate-300 text-slate-600 hover:bg-slate-100'
+                                            ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-[0_1px_3px_rgba(15,23,42,0.06)]'
                                             : 'bg-cyan-950/40 border-cyan-800/60 text-cyan-400 hover:bg-cyan-900/60 hover:text-cyan-200 shadow-[0_0_8px_rgba(34,211,238,0.2)]'
                                             }`}
                                         title="Attach / Select Images (or paste from clipboard Ctrl+V)"
@@ -817,14 +858,14 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                             onChange={(e) => setTaskInput(e.target.value)}
                                             placeholder={attachedImages.length > 0 ? "Enter instructions for attached image(s)..." : "Enter task or paste/drag image..."}
                                             disabled={isSubmitting}
-                                            className={`w-full border rounded-md py-2 pl-8 pr-4 text-xs focus:outline-none focus:ring-1 transition-all disabled:opacity-50 ${isLightMode ? 'bg-white border-slate-300 text-slate-800 placeholder:text-slate-400 focus:border-slate-500 focus:ring-slate-500' : 'bg-cyan-950/30 border-cyan-800/50 text-cyan-300 placeholder:text-cyan-800/70 focus:border-cyan-400 focus:ring-cyan-400'}`}
+                                        className={`w-full border rounded-md py-2 pl-8 pr-4 text-xs focus:outline-none focus:ring-1 transition-all disabled:opacity-50 ${isLightMode ? 'bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] focus:border-cyan-600 focus:ring-cyan-500/30' : 'bg-cyan-950/30 border-cyan-800/50 text-cyan-300 placeholder:text-cyan-800/70 focus:border-cyan-400 focus:ring-cyan-400'}`}
                                         />
                                     </div>
                                     {isTaskActive || isSubmitting ? (
                                         <button
                                             type="button"
                                             onClick={handleAbortTask}
-                                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-md border border-red-500/60 bg-red-950/60 text-red-400 hover:bg-red-900/80 hover:text-red-200 font-mono text-xs tracking-wider uppercase transition-all shadow-[0_0_12px_rgba(239,68,68,0.4)] shrink-0 cursor-pointer"
+                                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-md border font-mono text-xs tracking-wider uppercase transition-all shrink-0 cursor-pointer ${isLightMode ? 'border-red-700 bg-red-100 text-red-900 hover:bg-red-200' : 'border-red-500/60 bg-red-950/60 text-red-400 hover:bg-red-900/80 hover:text-red-200 shadow-[0_0_12px_rgba(239,68,68,0.4)]'}`}
                                             title="Emergency Abort Current Task & Clear Queue"
                                         >
                                             <span className="w-2 h-2 rounded-sm bg-red-500 animate-ping" />
@@ -835,7 +876,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                             type="submit"
                                             disabled={!taskInput.trim() && attachedImages.length === 0}
                                             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-md border text-xs font-mono tracking-wider uppercase shrink-0 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${isLightMode
-                                                ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700'
+                                                ? 'bg-slate-900 text-white border-slate-900 hover:bg-slate-700 shadow-[0_3px_10px_rgba(15,23,42,0.16)]'
                                                 : 'bg-cyan-950/60 border-cyan-700/60 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.4)]'
                                                 }`}
                                         >

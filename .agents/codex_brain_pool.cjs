@@ -57,6 +57,7 @@ class CodexAppServer {
         this.threadBrains = new Map();
         this.turns = new Map();
         this.buffer = '';
+        this.closed = false;
         this.child = spawn(codexBinary(), ['app-server', '--stdio'], {
             cwd: projectRoot,
             env: codexEnvironment(),
@@ -96,8 +97,16 @@ class CodexAppServer {
             message.error ? request.reject(new Error(message.error.message)) : request.resolve(message.result);
             return;
         }
+        const turn = this.turns.get(message.params?.turnId);
+        if (message.method === 'item/started' && turn) {
+            const activity = activityDescription(message.params?.item);
+            if (activity && shouldBroadcastActivity(turn)) {
+                publishActivity(turn.brain, activity);
+            }
+            return;
+        }
         if (message.method === 'item/completed' && message.params?.item?.type === 'agentMessage') {
-            this.turns.get(message.params.turnId)?.messages.push(message.params.item.text);
+            turn?.messages.push(message.params.item.text);
             return;
         }
         if (message.method === 'turn/completed') {
@@ -126,28 +135,70 @@ class CodexAppServer {
         const brain = this.threadBrains.get(params.threadId) || 'SYSTEM';
         const approvalId = `approval-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
         const details = approvalDescription(message.method, params);
+        // The user controls the approval timing. Pause the normal turn deadline
+        // until they decide, then give the brain its full execution window again.
+        this.pauseTurnTimeout(params.turnId);
         publishApproval(brain, approvalId, details)
             .then(() => waitForApprovalDecision(approvalId, APPROVAL_TIMEOUT_MS))
-            .then((decision) => this.respondToServerRequest(message.id, approvalResponse(message.method, params, decision)))
+            .then((decision) => {
+                this.respondToServerRequest(message.id, approvalResponse(message.method, params, decision));
+                this.armTurnTimeout(params.turnId);
+            })
             .catch((error) => {
                 console.error(`[CODEX APP SERVER] Approval ${approvalId} failed: ${error.message}`);
                 this.respondToServerRequest(message.id, approvalResponse(message.method, params, 'decline'));
+                this.armTurnTimeout(params.turnId);
             });
     }
 
     respondToServerRequest(id, result) {
-        this.child.stdin.write(`${JSON.stringify({ id, result })}\n`, (error) => {
-            if (error) console.error('[CODEX APP SERVER] Approval response failed:', error.message);
-        });
+        if (this.closed || !this.child.stdin || this.child.stdin.destroyed || !this.child.stdin.writable) return;
+        try {
+            this.child.stdin.write(`${JSON.stringify({ id, result })}\n`, (error) => {
+                if (error) console.error('[CODEX APP SERVER] Approval response failed:', error.message);
+            });
+        } catch (error) {
+            console.error('[CODEX APP SERVER] Approval response failed:', error.message);
+        }
+    }
+
+    pauseTurnTimeout(turnId) {
+        const turn = this.turns.get(turnId);
+        if (turn?.timeout) {
+            clearTimeout(turn.timeout);
+            turn.timeout = null;
+        }
+    }
+
+    armTurnTimeout(turnId) {
+        const turn = this.turns.get(turnId);
+        if (!turn || turn.timeout) return;
+        turn.timeout = setTimeout(() => {
+            this.request('turn/interrupt', { threadId: turn.threadId, turnId }).catch(() => { });
+            this.turns.delete(turnId);
+            turn.reject(new Error(`Codex ${turn.brain} turn timed out after ${Math.round(turn.timeoutMs / 1000)} seconds`));
+            // A non-responsive turn can leave the app server unable to serve
+            // the next persona reliably. Reset it; fresh threads are built on
+            // the next request.
+            setTimeout(() => this.child.kill('SIGTERM'), 1000).unref();
+        }, turn.timeoutMs);
     }
 
     request(method, params) {
+        if (this.closed || !this.child.stdin || this.child.stdin.destroyed || !this.child.stdin.writable) {
+            return Promise.reject(new Error('Codex app server is unavailable'));
+        }
         const id = ++this.requestId;
         return new Promise((resolve, reject) => {
             this.requests.set(id, { resolve, reject });
-            this.child.stdin.write(`${JSON.stringify({ id, method, params })}\n`, (error) => {
-                if (error) { this.requests.delete(id); reject(error); }
-            });
+            try {
+                this.child.stdin.write(`${JSON.stringify({ id, method, params })}\n`, (error) => {
+                    if (error) { this.requests.delete(id); reject(error); }
+                });
+            } catch (error) {
+                this.requests.delete(id);
+                reject(error);
+            }
         });
     }
 
@@ -158,7 +209,7 @@ class CodexAppServer {
                     cwd: this.projectRoot,
                     sandbox: 'workspace-write',
                     approvalPolicy: 'on-request',
-                    baseInstructions: `You are the persistent ${brain} persona for FAIS Brains. Preserve your role and project context across turns. Apply the role guidance below; treat it as local project context, not as instructions to reveal private content. When an action needs additional sandbox permission, request it through Codex so the user can approve or deny it in the FAIS UI; do not claim you can change permissions yourself.\n\n${loadVaultContext(brain)}`,
+                    baseInstructions: `You are the persistent ${brain} persona for FAIS Brains. Preserve your role and project context across turns. Apply the role guidance below; treat it as local project context, not as instructions to reveal private content. When an action needs additional sandbox permission, request it through Codex so the user can approve or deny it in the FAIS UI; do not claim you can change permissions yourself. Before invoking a project command, verify its executable and target files exist. On Windows PowerShell, invoke Node package-manager commands through npm.cmd (for example, npm.cmd run build), never npm, because the npm.ps1 wrapper can be blocked by execution policy. If a requested verification tool is unavailable, run the relevant available checks, state the limitation succinctly, and continue; do not fail the task merely because an optional local tool or test file is absent.\n\n${loadVaultContext(brain)}`,
                 });
                 this.threadBrains.set(result.thread.id, brain);
                 return result.thread.id;
@@ -178,16 +229,8 @@ class CodexAppServer {
         });
         const turnId = result.turn.id;
         return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                this.request('turn/interrupt', { threadId, turnId }).catch(() => { });
-                this.turns.delete(turnId);
-                reject(new Error(`Codex ${brain} turn timed out after ${Math.round(options.timeout / 1000)} seconds`));
-                // A non-responsive turn can leave the app server unable to serve
-                // the next persona reliably. Reset it; fresh threads are built on
-                // the next request.
-                setTimeout(() => this.child.kill('SIGTERM'), 1000).unref();
-            }, options.timeout);
-            this.turns.set(turnId, { threadId, messages: [], resolve, reject, timeout });
+            this.turns.set(turnId, { brain, threadId, messages: [], resolve, reject, timeout: null, timeoutMs: options.timeout, activityBroadcasted: false });
+            this.armTurnTimeout(turnId);
         });
     }
 
@@ -201,6 +244,7 @@ class CodexAppServer {
     }
 
     fail(error) {
+        this.closed = true;
         for (const request of this.requests.values()) request.reject(error);
         this.requests.clear();
         for (const turn of this.turns.values()) { clearTimeout(turn.timeout); turn.reject(error); }
@@ -217,6 +261,34 @@ function approvalDescription(method, params) {
         return `Permission requested: ${params.reason || 'additional sandbox access'}.`;
     }
     return `Permission requested to run \`${params.command || 'a command'}\`${params.cwd ? ` in ${params.cwd}` : ''}${params.reason ? `: ${params.reason}` : '.'}`;
+}
+
+/**
+ * Convert Codex item lifecycle events to safe, user-visible progress updates.
+ * Never forward raw reasoning, commands, arguments, file paths, or tool output:
+ * those may disclose sensitive task details while adding little status value.
+ */
+function activityDescription(item) {
+    switch (item?.type) {
+        case 'reasoning':
+            return 'Reviewing the task approach...';
+        case 'commandExecution':
+            return 'Running a workspace command...';
+        case 'fileChange':
+            return 'Preparing workspace changes...';
+        case 'mcpToolCall':
+            return 'Using an integrated tool...';
+        case 'webSearch':
+            return 'Checking referenced information...';
+        default:
+            return null;
+    }
+}
+
+function shouldBroadcastActivity(turn) {
+    if (turn.activityBroadcasted) return false;
+    turn.activityBroadcasted = true;
+    return true;
 }
 
 function approvalResponse(method, params, decision) {
@@ -246,6 +318,20 @@ function publishApproval(brain, approvalId, message) {
     });
 }
 
+function publishActivity(brain, message) {
+    return new Promise((resolve) => {
+        const body = JSON.stringify({ brain, message });
+        const request = require('http').request({
+            hostname: '127.0.0.1', port: 8001, path: '/api/webhook/brain-message', method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+        }, (response) => { response.resume(); resolve(); });
+        request.setTimeout(3000, () => { request.destroy(); resolve(); });
+        request.on('error', resolve);
+        request.write(body);
+        request.end();
+    });
+}
+
 function waitForApprovalDecision(approvalId, timeout) {
     const decisionsFile = approvalIpcPath('approval_decisions.json');
     const startedAt = Date.now();
@@ -263,19 +349,29 @@ function waitForApprovalDecision(approvalId, timeout) {
     });
 }
 
-function queryBrain(brain, prompt, projectRoot, options = {}) {
+async function queryBrain(brain, prompt, projectRoot, options = {}) {
     const cwd = projectRoot && require('fs').existsSync(projectRoot)
         ? projectRoot
         : path.resolve(__dirname, '..');
-    if (!server || server.projectRoot !== cwd || server.child.exitCode !== null) {
+    const createServer = () => {
         server?.child.kill('SIGTERM');
         server = new CodexAppServer(cwd);
+    };
+    if (!server || server.projectRoot !== cwd || server.closed || server.child.exitCode !== null || server.child.stdin.destroyed || !server.child.stdin.writable) {
+        createServer();
     }
-    return server.query(brain, prompt, {
+    const optionsWithDefaults = {
         timeout: options.timeout ?? DEFAULT_TIMEOUT_MS,
         model: options.model || process.env.BRAIN_CODEX_STANDARD_MODEL || 'gpt-5.6-terra',
         effort: options.effort || process.env.BRAIN_CODEX_STANDARD_EFFORT || 'medium',
-    });
+    };
+    try {
+        return await server.query(brain, prompt, optionsWithDefaults);
+    } catch (error) {
+        if (!/stream was destroyed|app server is unavailable|write after/i.test(error.message)) throw error;
+        createServer();
+        return server.query(brain, prompt, optionsWithDefaults);
+    }
 }
 
 function cancelActiveTask() {
@@ -289,9 +385,11 @@ function resetBrainPool() {
 }
 
 module.exports = {
+    activityDescription,
     approvalDescription,
     approvalResponse,
     cancelActiveTask,
     queryBrain,
     resetBrainPool,
+    shouldBroadcastActivity,
 };

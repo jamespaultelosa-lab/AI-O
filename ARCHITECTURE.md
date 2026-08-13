@@ -24,6 +24,12 @@ every Codex prompt and decision follow-up uses only `transport_task` plus the
 attachment metadata. The full display text never enters watcher logs, webhook
 payloads, error output, previous execution context, or model prompts.
 
+Task submission does not create a `SYSTEM` acknowledgement. While Codex is
+working, its lifecycle items publish deduplicated, safe phase updates from the
+active brain (for example, reviewing, running a command, or preparing changes).
+Raw reasoning, commands, arguments, tool output, and file paths are never
+broadcast.
+
 Brief greetings addressed to the group are a separate conversational path: all
 four brain threads reply. Explicit aliases (`archi`/`architect`, `security`,
 `senior dev`, and `junior`) select the corresponding lead instead of falling

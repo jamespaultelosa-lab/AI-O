@@ -6,6 +6,7 @@ use App\Events\BrainMessageBroadcast;
 use App\Events\BrainStatusBroadcast;
 use App\Models\BrainStatus;
 use App\Services\BrainMessageStore;
+use App\Services\BrainTaskStore;
 use App\Services\TaskIntentDiscernment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -60,7 +61,7 @@ class TaskDispatcherController extends Controller
         return 'gpt-5.6-terra (low)';
     }
 
-    public function dispatch(Request $request, TaskIntentDiscernment $intentDiscernment, BrainMessageStore $messageStore)
+    public function dispatch(Request $request, TaskIntentDiscernment $intentDiscernment, BrainMessageStore $messageStore, BrainTaskStore $taskStore)
     {
         $validated = $request->validate([
             'display_task' => ['required', 'string', 'min:1', 'max:'.self::DISPLAY_TASK_MAX_LENGTH],
@@ -120,14 +121,6 @@ class TaskDispatcherController extends Controller
             }
         }
 
-        $newTaskPayload = [
-            'display_task' => $displayTask,
-            'transport_task' => $transportTask,
-            'images' => $images,
-            'assigned_model' => $assignedModel,
-            'timestamp' => now()->toIso8601String(),
-        ];
-
         // Keep browser-to-watcher IPC in Laravel's writable storage area.
         $queueFile = $this->agentIpcPath('task_queue.json');
         $queue = [];
@@ -139,6 +132,16 @@ class TaskDispatcherController extends Controller
             }
         }
 
+        $queuePosition = count($queue) + 1;
+        $brainTask = $taskStore->create($displayTask, $assignedModel, $queuePosition);
+        $newTaskPayload = [
+            'task_id' => $brainTask->id,
+            'display_task' => $displayTask,
+            'transport_task' => $transportTask,
+            'images' => $images,
+            'assigned_model' => $assignedModel,
+            'timestamp' => now()->toIso8601String(),
+        ];
         $queue[] = $newTaskPayload;
         file_put_contents($queueFile, json_encode($queue, JSON_PRETTY_PRINT));
 
@@ -152,12 +155,10 @@ class TaskDispatcherController extends Controller
         $messageStore->record('USER', $displayTask);
 
         $queueCount = count($queue);
-        $queueNote = $queueCount > 1 ? " (Queued as #$queueCount)" : '';
 
-        // Broadcast acknowledgment
-        $systemMsg = "**Task Received: \"$displayTask\" [Routed to: $assignedModel]$queueNote**";
-        $messageStore->record('SYSTEM', $systemMsg);
-        event(new BrainMessageBroadcast('SYSTEM', $systemMsg));
+        // The watcher publishes safe, phase-level activity updates as it works.
+        // Do not echo the submitted task in a SYSTEM message: it can be sensitive
+        // and it does not tell the user which phase is currently running.
 
         return response()->json([
             'status' => 'success',
@@ -165,6 +166,7 @@ class TaskDispatcherController extends Controller
             'mode' => TaskIntentDiscernment::ACTIONABLE,
             'task' => $displayTask,
             'assigned_model' => $assignedModel,
+            'task_id' => $brainTask->id,
             'queue_position' => $queueCount,
         ]);
     }

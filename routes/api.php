@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\TaskDispatcherController;
+use App\Http\Controllers\BrainTaskController;
 use App\Events\BrainMessageBroadcast;
 use App\Events\BrainStatusChanged;
 use App\Services\BrainMessageStore;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Route;
 Route::post('/brain/dispatch', [TaskDispatcherController::class, 'dispatch']);
 Route::get('/brain/history', [TaskDispatcherController::class, 'getHistory']);
 Route::post('/brain/approvals/{approvalId}', [TaskDispatcherController::class, 'resolveApproval']);
+Route::get('/brain/tasks', [BrainTaskController::class, 'index']);
+Route::get('/brain/tasks/{taskId}', [BrainTaskController::class, 'show']);
 
 Route::post('/webhook/brain-status', function (Request $request) {
     $request->validate([

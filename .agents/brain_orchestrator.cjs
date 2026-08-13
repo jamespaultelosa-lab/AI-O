@@ -58,6 +58,13 @@ function executionProfileFor(route, task) {
     return { model: process.env.BRAIN_CODEX_STANDARD_MODEL || 'gpt-5.6-terra', effort: process.env.BRAIN_CODEX_STANDARD_EFFORT || 'medium' };
 }
 
+function timeoutForRoute(route) {
+    if (route.tier === 'heavy') return 10 * 60 * 1000;
+    if (route.tier === 'casual_group') return 30 * 1000;
+    // Code changes and local builds can reasonably outlast two minutes.
+    return 5 * 60 * 1000;
+}
+
 function routeTask(task) {
     const text = String(task || '').toLowerCase();
     if (isGroupGreeting(text)) {
@@ -179,11 +186,7 @@ async function orchestrate(taskData, webhook = sendWebhook, runner = queryBrain)
     const hasSelectedProject = Boolean(selectedProject);
     const consultations = [];
     const executionProfile = executionProfileFor(route, transportTask);
-    const timeout = route.tier === 'heavy'
-        ? 10 * 60 * 1000
-        : route.tier === 'casual_group'
-            ? 30 * 1000
-            : 2 * 60 * 1000;
+    const timeout = timeoutForRoute(route);
     const runBrain = runner === queryBrain
         ? (brain, prompt) => queryBrain(brain, prompt, projectRoot, { timeout, ...executionProfile })
         : (brain, prompt) => runner(prompt, brain, projectRoot, { timeout, ...executionProfile });
@@ -199,6 +202,7 @@ async function orchestrate(taskData, webhook = sendWebhook, runner = queryBrain)
                 messages.push({ brain, message });
             } catch (error) {
                 console.error(`[BRAIN ORCHESTRATOR] ${brain} failed: ${error.message}`);
+                await webhook('brain-status', { brain, status: 'idle' });
             }
         }
         return messages;
@@ -215,6 +219,7 @@ async function orchestrate(taskData, webhook = sendWebhook, runner = queryBrain)
             await webhook('brain-status', { brain: consultant, status: 'standby' });
         } catch (error) {
             console.error(`[BRAIN ORCHESTRATOR] ${consultant} failed: ${error.message}`);
+            await webhook('brain-status', { brain: consultant, status: 'idle' });
         }
     }
 
@@ -232,6 +237,7 @@ async function orchestrate(taskData, webhook = sendWebhook, runner = queryBrain)
         return [{ brain: route.lead, message }];
     } catch (error) {
         console.error(`[BRAIN ORCHESTRATOR] ${route.lead} failed: ${error.message}`);
+        await webhook('brain-status', { brain: route.lead, status: 'idle' });
         return [];
     }
 }
@@ -254,4 +260,5 @@ module.exports = {
     resolvedDecisionFromTask,
     routeTask,
     taskWithDecisionContext,
+    timeoutForRoute,
 };

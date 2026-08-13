@@ -7,6 +7,13 @@ const orchestrator = require('../../.agents/brain_orchestrator.cjs');
 const brainPool = require('../../.agents/codex_brain_pool.cjs');
 const vault = require('../../.agents/vault_learning.cjs');
 
+test('Codex lifecycle items have safe, generic activity messages', () => {
+    assert.equal(brainPool.activityDescription({ type: 'reasoning' }), 'Reviewing the task approach...');
+    assert.equal(brainPool.activityDescription({ type: 'commandExecution', command: 'cat .env' }), 'Running a workspace command...');
+    assert.equal(brainPool.activityDescription({ type: 'fileChange', path: '.env' }), 'Preparing workspace changes...');
+    assert.equal(brainPool.activityDescription({ type: 'unknown' }), null);
+});
+
 test('casual and routine messages select one lead brain', () => {
     assert.deepEqual(orchestrator.routeTask('hello'), { lead: 'Architect', consultants: [], tier: 'normal' });
     assert.deepEqual(orchestrator.routeTask('fix the failing endpoint test'), { lead: 'Senior_Dev', consultants: [], tier: 'normal' });
@@ -31,6 +38,11 @@ test('execution profile scales model and effort with task load', () => {
     assert.deepEqual(orchestrator.executionProfileFor(orchestrator.routeTask('wake up bois'), 'wake up bois'), { model: 'gpt-5.6-terra', effort: 'low' });
     assert.deepEqual(orchestrator.executionProfileFor(orchestrator.routeTask('fix the failing endpoint test'), 'fix the failing endpoint test'), { model: 'gpt-5.6-terra', effort: 'medium' });
     assert.deepEqual(orchestrator.executionProfileFor(orchestrator.routeTask('redesign the authenticated payroll database and secure API'), 'redesign the authenticated payroll database and secure API'), { model: 'gpt-5.6-sol', effort: 'high' });
+});
+
+test('normal work has enough time to complete while greetings remain short', () => {
+    assert.equal(orchestrator.timeoutForRoute(orchestrator.routeTask('fix the failing endpoint test')), 5 * 60 * 1000);
+    assert.equal(orchestrator.timeoutForRoute(orchestrator.routeTask('wake up bois')), 30 * 1000);
 });
 
 test('vault context is role-scoped and learning capture is safe and deduplicated', () => {
