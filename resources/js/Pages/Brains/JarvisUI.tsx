@@ -588,7 +588,9 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                             <div key={msg.id} className={`text-[11px] leading-relaxed break-words p-3 rounded border transition-colors duration-500 ${getBrainBgColor(msg.brain)}`}>
                                                 <div className="flex justify-between items-baseline mb-1">
                                                     <span className={`font-bold tracking-wider ${getBrainColor(msg.brain)}`}>[{msg.brain}]</span>
-                                                    <span className={`text-[9px] ${isLightMode ? 'text-slate-400' : 'text-cyan-800'}`}>{msg.time}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[9px] ${isLightMode ? 'text-slate-400' : 'text-cyan-800'}`}>{msg.time}</span>
+                                                    </div>
                                                 </div>
                                                 <div className={`font-sans tracking-wide flex items-start gap-2 ${isLightMode ? 'text-slate-700' : 'text-cyan-100'}`}>
                                                     <div className="mt-0.5 shrink-0">

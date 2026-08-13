@@ -2,24 +2,32 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const { execSync } = require('child_process');
+const { orchestrate } = require('./brain_orchestrator.cjs');
 
-const TASK_FILE = path.resolve(__dirname, 'pending_task.json');
-
-const QUEUE_FILE = path.resolve(__dirname, 'task_queue.json');
+const IPC_DIRECTORY = path.resolve(__dirname, '..', 'storage', 'app', 'agent_ipc');
+const TASK_FILE = path.join(IPC_DIRECTORY, 'pending_task.json');
+const QUEUE_FILE = path.join(IPC_DIRECTORY, 'task_queue.json');
 
 function sendWebhook(endpoint, data) {
     return new Promise((resolve) => {
         const postData = JSON.stringify(data);
         const req = http.request({
             hostname: '127.0.0.1',
-            port: 8000,
-            path: `/webhook/${endpoint}`,
+            port: 8001,
+            path: `/api/webhook/${endpoint}`,
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Content-Length': Buffer.byteLength(postData)
             }
-        }, () => resolve());
+        }, (response) => {
+            response.resume();
+            resolve();
+        });
+        req.setTimeout(3000, () => {
+            req.destroy();
+            resolve();
+        });
         req.on('error', () => resolve());
         req.write(postData);
         req.end();
@@ -35,9 +43,9 @@ if (fs.existsSync(PID_FILE)) {
             try {
                 process.kill(oldPid, 'SIGTERM');
                 console.log(`[TASK WATCHER] Killed previous watcher PID ${oldPid}. New watcher PID ${process.pid} active.`);
-            } catch (e) {}
+            } catch (e) { }
         }
-    } catch (e) {}
+    } catch (e) { }
 }
 
 fs.writeFileSync(PID_FILE, process.pid.toString());
@@ -47,8 +55,10 @@ process.on('exit', () => {
         if (fs.existsSync(PID_FILE) && fs.readFileSync(PID_FILE, 'utf-8').trim() === process.pid.toString()) {
             fs.unlinkSync(PID_FILE);
         }
-    } catch (e) {}
+    } catch (e) { }
 });
+
+fs.mkdirSync(IPC_DIRECTORY, { recursive: true });
 
 if (!fs.existsSync(TASK_FILE)) {
     fs.writeFileSync(TASK_FILE, JSON.stringify({ task: null, timestamp: null }));
@@ -60,8 +70,11 @@ if (!fs.existsSync(QUEUE_FILE)) {
 console.log('Watching for new tasks at:', QUEUE_FILE);
 
 let lastTimestamp = null;
+let isProcessing = false;
 
-function processQueueOrPending() {
+async function processQueueOrPending() {
+    if (isProcessing) return;
+    isProcessing = true;
     try {
         let taskData = null;
 
@@ -69,7 +82,7 @@ function processQueueOrPending() {
         if (fs.existsSync(QUEUE_FILE)) {
             const queueContent = fs.readFileSync(QUEUE_FILE, 'utf-8');
             let queue = [];
-            try { queue = JSON.parse(queueContent); } catch (e) {}
+            try { queue = JSON.parse(queueContent); } catch (e) { }
 
             if (Array.isArray(queue) && queue.length > 0) {
                 taskData = queue.shift(); // FIFO dequeue
@@ -86,7 +99,7 @@ function processQueueOrPending() {
                     taskData = pending;
                     fs.writeFileSync(TASK_FILE, JSON.stringify({ task: null, timestamp: null }));
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
 
         if (taskData && taskData.task && taskData.timestamp !== lastTimestamp) {
@@ -106,17 +119,17 @@ function processQueueOrPending() {
                     }
                 }
             }
-            
+
             // Clear pending_task.json to avoid re-triggering
             fs.writeFileSync(TASK_FILE, JSON.stringify({ task: null, timestamp: null }));
 
-            const systemMsgDelay = ((taskData.task.length || 20) * 30) + 1000;
-            const totalFinishTime = Date.now() + systemMsgDelay;
-            fs.writeFileSync(path.resolve(__dirname, 'speaking.lock'), totalFinishTime.toString());
-
-            sendWebhook('brain-status', { brain: 'Senior_Dev', status: 'thinking' }).catch(()=>{});
+            await orchestrate(taskData);
         }
-    } catch (e) {}
+    } catch (e) {
+        console.error('[TASK WATCHER] Brain orchestration failed:', e.message);
+    } finally {
+        isProcessing = false;
+    }
 }
 
 // Initial check on startup

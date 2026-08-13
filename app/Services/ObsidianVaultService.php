@@ -11,7 +11,7 @@ class ObsidianVaultService
     public function __construct()
     {
         // Load from .env so it can be configured per workstation
-        $this->vaultPath = env('OBSIDIAN_VAULT_PATH', 'C:\Obsidian\FAIS');
+        $this->vaultPath = env('OBSIDIAN_VAULT_PATH', 'C:\\Users\\ICTDO-James\\Documents\\Fais Project\\FAIS');
     }
 
     public function getGlobalContext(): array
@@ -25,9 +25,22 @@ class ObsidianVaultService
 
     public function getBrainData(string $brainName): array
     {
-        $brainPath = $this->vaultPath . '\Brains\\' . $brainName;
+        $brainPaths = [
+            'Architect' => $this->vaultPath . '\\FAIS Payroll Documentation\\Architect Brain',
+            'Senior_Dev' => $this->vaultPath . '\\FAIS Payroll Documentation\\Senior Dev Brain',
+            'Security' => $this->vaultPath . '\\FAIS Payroll Documentation\\Security Brain',
+            'Junior_Dev' => $this->vaultPath . '\\FAIS Payroll Documentation\\Brain',
+        ];
+        $brainPath = $brainPaths[$brainName] ?? $this->vaultPath . '\\FAIS Payroll Documentation\\Brain';
         
-        $persona = File::exists($brainPath . '\Persona.md') ? File::get($brainPath . '\Persona.md') : '';
+        $indexFiles = [
+            'Architect' => '_Architect Index.md',
+            'Senior_Dev' => '_SeniorDev Index.md',
+            'Security' => '_Security Index.md',
+            'Junior_Dev' => '_Agent Workflow.md',
+        ];
+        $indexFile = $indexFiles[$brainName] ?? '_Index.md';
+        $persona = File::exists($brainPath . '\\' . $indexFile) ? File::get($brainPath . '\\' . $indexFile) : '';
         $mistakes = File::exists($brainPath . '\Mistakes.md') ? File::get($brainPath . '\Mistakes.md') : '';
         
         // Dynamic loading for specific files based on brain type

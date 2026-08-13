@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Events\BrainMessageBroadcast;
 use App\Events\BrainStatusBroadcast;
-use App\Models\BrainMessage;
 use App\Models\BrainStatus;
+use App\Services\BrainMessageStore;
 use App\Services\TaskIntentDiscernment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -58,7 +58,7 @@ class TaskDispatcherController extends Controller
         return 'gemini 3.6 flash(high)';
     }
 
-    public function dispatch(Request $request, TaskIntentDiscernment $intentDiscernment)
+    public function dispatch(Request $request, TaskIntentDiscernment $intentDiscernment, BrainMessageStore $messageStore)
     {
         $request->validate([
             'task' => ['required', 'string', 'max:'.self::TASK_TEXT_MAX_LENGTH],
@@ -71,16 +71,10 @@ class TaskDispatcherController extends Controller
 
         $intent = $intentDiscernment->decide($task);
         if ($intent === TaskIntentDiscernment::CASUAL && count($rawImages) === 0) {
-            BrainMessage::create([
-                'brain' => 'USER',
-                'message' => $task,
-            ]);
+            $messageStore->record('USER', $task);
 
             $casualResponse = 'Hello! How can I help?';
-            BrainMessage::create([
-                'brain' => 'Architect',
-                'message' => $casualResponse,
-            ]);
+            $messageStore->record('Architect', $casualResponse);
             event(new BrainMessageBroadcast('Architect', $casualResponse));
 
             return response()->json([
@@ -134,8 +128,8 @@ class TaskDispatcherController extends Controller
             'timestamp' => now()->toIso8601String(),
         ];
 
-        // 1. Manage task queue file (.agents/task_queue.json)
-        $queueFile = base_path('.agents/task_queue.json');
+        // Keep browser-to-watcher IPC in Laravel's writable storage area.
+        $queueFile = $this->agentIpcPath('task_queue.json');
         $queue = [];
         if (file_exists($queueFile)) {
             $content = file_get_contents($queueFile);
@@ -148,27 +142,21 @@ class TaskDispatcherController extends Controller
         $queue[] = $newTaskPayload;
         file_put_contents($queueFile, json_encode($queue, JSON_PRETTY_PRINT));
 
-        // 2. Also write to pending_task.json for instant pickup if queue was empty
-        $pendingFile = base_path('.agents/pending_task.json');
+        // Also write a pending payload for instant pickup when the queue was empty.
+        $pendingFile = $this->agentIpcPath('pending_task.json');
         if (! file_exists($pendingFile) || count($queue) === 1) {
             file_put_contents($pendingFile, json_encode($newTaskPayload, JSON_PRETTY_PRINT));
         }
 
         // Save USER message to database
-        BrainMessage::create([
-            'brain' => 'USER',
-            'message' => $taskMessageWithImages,
-        ]);
+        $messageStore->record('USER', $taskMessageWithImages);
 
         $queueCount = count($queue);
         $queueNote = $queueCount > 1 ? " (Queued as #$queueCount)" : '';
 
         // Broadcast acknowledgment
         $systemMsg = "**Task Received: \"$task\" [Routed to: $assignedModel]$queueNote**";
-        BrainMessage::create([
-            'brain' => 'SYSTEM',
-            'message' => $systemMsg,
-        ]);
+        $messageStore->record('SYSTEM', $systemMsg);
         event(new BrainMessageBroadcast('SYSTEM', $systemMsg));
 
         return response()->json([
@@ -245,19 +233,19 @@ class TaskDispatcherController extends Controller
         }
     }
 
-    public function abortTask(Request $request)
+    public function abortTask(Request $request, BrainMessageStore $messageStore)
     {
         // 1. Empty the task queue file
-        $queueFile = base_path('.agents/task_queue.json');
+        $queueFile = $this->agentIpcPath('task_queue.json');
         file_put_contents($queueFile, json_encode([]));
 
         // 2. Remove pending task file and speaking lock
-        $pendingFile = base_path('.agents/pending_task.json');
+        $pendingFile = $this->agentIpcPath('pending_task.json');
         if (file_exists($pendingFile)) {
             @unlink($pendingFile);
         }
 
-        $lockFile = base_path('.agents/speaking.lock');
+        $lockFile = $this->agentIpcPath('speaking.lock');
         if (file_exists($lockFile)) {
             @unlink($lockFile);
         }
@@ -274,10 +262,7 @@ class TaskDispatcherController extends Controller
 
         // 4. Log and broadcast cancellation notification
         $abortMsg = '[Senior_Dev]: Task execution interrupted and queue cleared by user.';
-        BrainMessage::create([
-            'brain' => 'Senior_Dev',
-            'message' => $abortMsg,
-        ]);
+        $messageStore->record('Senior_Dev', $abortMsg);
         event(new BrainMessageBroadcast('Senior_Dev', $abortMsg));
 
         return response()->json([
@@ -288,7 +273,7 @@ class TaskDispatcherController extends Controller
 
     public function getQueueStatus()
     {
-        $queueFile = base_path('.agents/task_queue.json');
+        $queueFile = $this->agentIpcPath('task_queue.json');
         $queue = [];
         if (file_exists($queueFile)) {
             $content = file_get_contents($queueFile);
@@ -304,14 +289,18 @@ class TaskDispatcherController extends Controller
         ]);
     }
 
-    public function getHistory()
+    public function getHistory(BrainMessageStore $messageStore)
     {
-        $messages = BrainMessage::latest()
-            ->take(30)
-            ->get()
-            ->reverse()
-            ->values();
+        return response()->json($messageStore->recent());
+    }
 
-        return response()->json($messages);
+    private function agentIpcPath(string $filename): string
+    {
+        $directory = storage_path('app/agent_ipc');
+        if (! is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        return $directory.DIRECTORY_SEPARATOR.$filename;
     }
 }
