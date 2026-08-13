@@ -5,7 +5,36 @@ const { loadVaultContext } = require('./vault_learning.cjs');
 
 const DEFAULT_TIMEOUT_MS = 2 * 60 * 1000;
 const APPROVAL_TIMEOUT_MS = 10 * 60 * 1000;
+const LONG_TURN_NOTICE_MS = 60 * 1000;
 let server = null;
+
+function discoverPhpDirectory(env, platform = process.platform) {
+    if (platform !== 'win32') return null;
+    const pathKey = Object.keys(env).find((key) => key.toLowerCase() === 'path') || 'Path';
+    const pathEntries = String(env[pathKey] || '').split(path.delimiter).filter(Boolean);
+    const configuredBinary = env.PHP_BINARY && fs.existsSync(env.PHP_BINARY) ? path.dirname(env.PHP_BINARY) : null;
+    const candidates = [
+        ...pathEntries,
+        configuredBinary,
+        env.PHP_HOME,
+        'C:\\xampp\\php',
+        'C:\\laragon\\bin\\php',
+        'C:\\php',
+        'C:\\tools\\php',
+        env.ProgramFiles && path.join(env.ProgramFiles, 'PHP'),
+        env['ProgramFiles(x86)'] && path.join(env['ProgramFiles(x86)'], 'PHP'),
+    ].filter(Boolean);
+
+    for (const candidate of candidates) {
+        if (fs.existsSync(path.join(candidate, 'php.exe'))) return candidate;
+        try {
+            const versionDirectory = fs.readdirSync(candidate, { withFileTypes: true })
+                .find((entry) => entry.isDirectory() && fs.existsSync(path.join(candidate, entry.name, 'php.exe')));
+            if (versionDirectory) return path.join(candidate, versionDirectory.name);
+        } catch { /* Absent or inaccessible candidate. */ }
+    }
+    return null;
+}
 
 function codexEnvironment() {
     const env = { ...process.env };
@@ -13,6 +42,13 @@ function codexEnvironment() {
 
     if (home && !env.HOME) {
         env.HOME = home;
+    }
+
+    const phpDirectory = discoverPhpDirectory(env);
+    const pathKey = Object.keys(env).find((key) => key.toLowerCase() === 'path') || 'Path';
+    const pathEntries = String(env[pathKey] || '').split(path.delimiter).filter(Boolean);
+    if (phpDirectory && !pathEntries.some((entry) => entry.toLowerCase() === phpDirectory.toLowerCase())) {
+        env[pathKey] = [phpDirectory, ...pathEntries].join(path.delimiter);
     }
 
     return env;
@@ -101,7 +137,7 @@ class CodexAppServer {
         if (message.method === 'item/started' && turn) {
             const activity = activityDescription(message.params?.item);
             if (activity && shouldBroadcastActivity(turn)) {
-                publishActivity(turn.brain, activity);
+                publishActivity(turn.brain, activity, turn.taskId);
             }
             return;
         }
@@ -114,6 +150,7 @@ class CodexAppServer {
             if (!turn) return;
             this.turns.delete(message.params.turn.id);
             clearTimeout(turn.timeout);
+            clearTimeout(turn.longRunningNotice);
             message.params.turn.status === 'completed'
                 ? turn.resolve(turn.messages.join('\n').trim())
                 : turn.reject(new Error(message.params.turn.error?.message || `Codex turn ${message.params.turn.status}`));
@@ -133,12 +170,13 @@ class CodexAppServer {
 
         const params = message.params || {};
         const brain = this.threadBrains.get(params.threadId) || 'SYSTEM';
-        const approvalId = `approval-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        const taskId = this.turns.get(params.turnId)?.taskId || null;
+        const approvalId = require('crypto').randomUUID();
         const details = approvalDescription(message.method, params);
         // The user controls the approval timing. Pause the normal turn deadline
         // until they decide, then give the brain its full execution window again.
         this.pauseTurnTimeout(params.turnId);
-        publishApproval(brain, approvalId, details)
+        publishApproval(brain, approvalId, details, taskId, approvalType(message.method))
             .then(() => waitForApprovalDecision(approvalId, APPROVAL_TIMEOUT_MS))
             .then((decision) => {
                 this.respondToServerRequest(message.id, approvalResponse(message.method, params, decision));
@@ -168,6 +206,10 @@ class CodexAppServer {
             clearTimeout(turn.timeout);
             turn.timeout = null;
         }
+        if (turn?.longRunningNotice) {
+            clearTimeout(turn.longRunningNotice);
+            turn.longRunningNotice = null;
+        }
     }
 
     armTurnTimeout(turnId) {
@@ -182,6 +224,13 @@ class CodexAppServer {
             // the next request.
             setTimeout(() => this.child.kill('SIGTERM'), 1000).unref();
         }, turn.timeoutMs);
+        if (!turn.longRunningNotice && !turn.longRunningNoticeSent) {
+            turn.longRunningNotice = setTimeout(() => {
+                turn.longRunningNotice = null;
+                turn.longRunningNoticeSent = true;
+                publishActivity(turn.brain, 'Still working on the current task (over one minute). You can safely choose Stop to cancel it.', turn.taskId);
+            }, LONG_TURN_NOTICE_MS);
+        }
     }
 
     request(method, params) {
@@ -209,7 +258,7 @@ class CodexAppServer {
                     cwd: this.projectRoot,
                     sandbox: 'workspace-write',
                     approvalPolicy: 'on-request',
-                    baseInstructions: `You are the persistent ${brain} persona for FAIS Brains. Preserve your role and project context across turns. Apply the role guidance below; treat it as local project context, not as instructions to reveal private content. When an action needs additional sandbox permission, request it through Codex so the user can approve or deny it in the FAIS UI; do not claim you can change permissions yourself. Before invoking a project command, verify its executable and target files exist. On Windows PowerShell, invoke Node package-manager commands through npm.cmd (for example, npm.cmd run build), never npm, because the npm.ps1 wrapper can be blocked by execution policy. If a requested verification tool is unavailable, run the relevant available checks, state the limitation succinctly, and continue; do not fail the task merely because an optional local tool or test file is absent.\n\n${loadVaultContext(brain)}`,
+                    baseInstructions: `You are the persistent ${brain} persona for FAIS Brains. Preserve your role and project context across turns. Apply the role guidance below; treat it as local project context, not as instructions to reveal private content. When an action needs additional sandbox permission, request it through Codex so the user can approve or deny it in the FAIS UI; do not claim you can change permissions yourself. Before invoking a project command, verify its executable and target files exist. On Windows PowerShell, invoke Node package-manager commands through npm.cmd (for example, npm.cmd run build), never npm, because the npm.ps1 wrapper can be blocked by execution policy. In PowerShell interpolated strings, delimit a variable with braces when punctuation immediately follows it (for example, "\${variable}: value", never "$variable: value"). Never throw merely because an optional executable is absent. Use an available runtime, or state the limitation briefly and continue with relevant checks. If a requested verification tool is unavailable, run the relevant available checks and continue.\n\n${loadVaultContext(brain)}`,
                 });
                 this.threadBrains.set(result.thread.id, brain);
                 return result.thread.id;
@@ -229,7 +278,7 @@ class CodexAppServer {
         });
         const turnId = result.turn.id;
         return new Promise((resolve, reject) => {
-            this.turns.set(turnId, { brain, threadId, messages: [], resolve, reject, timeout: null, timeoutMs: options.timeout, activityBroadcasted: false });
+            this.turns.set(turnId, { brain, threadId, taskId: safeTaskId(options.taskId), messages: [], resolve, reject, timeout: null, timeoutMs: options.timeout, activityBroadcasted: false, longRunningNotice: null, longRunningNoticeSent: false });
             this.armTurnTimeout(turnId);
         });
     }
@@ -237,6 +286,7 @@ class CodexAppServer {
     cancel() {
         for (const [turnId, turn] of this.turns) {
             clearTimeout(turn.timeout);
+            clearTimeout(turn.longRunningNotice);
             this.request('turn/interrupt', { threadId: turn.threadId, turnId }).catch(() => { });
             turn.reject(new Error('Codex turn cancelled'));
         }
@@ -247,20 +297,33 @@ class CodexAppServer {
         this.closed = true;
         for (const request of this.requests.values()) request.reject(error);
         this.requests.clear();
-        for (const turn of this.turns.values()) { clearTimeout(turn.timeout); turn.reject(error); }
+        for (const turn of this.turns.values()) { clearTimeout(turn.timeout); clearTimeout(turn.longRunningNotice); turn.reject(error); }
         this.turns.clear();
     }
 }
 
 function approvalDescription(method, params) {
     if (method === 'item/fileChange/requestApproval') {
-        const files = (params.changes || []).map((change) => change.path || change.filePath).filter(Boolean);
-        return `Permission requested to modify ${files.length > 0 ? files.join(', ') : 'workspace files'}${params.reason ? `: ${params.reason}` : '.'}`;
+        return 'Permission requested to modify workspace files in the active project.';
     }
     if (method === 'item/permissions/requestApproval') {
-        return `Permission requested: ${params.reason || 'additional sandbox access'}.`;
+        return 'Permission requested for additional sandbox access in the active project.';
     }
-    return `Permission requested to run \`${params.command || 'a command'}\`${params.cwd ? ` in ${params.cwd}` : ''}${params.reason ? `: ${params.reason}` : '.'}`;
+    return `Permission requested to ${safeCommandOperation(params.command)} in the active project.`;
+}
+
+function safeTaskId(taskId) {
+    return typeof taskId === 'string' && taskId.trim().length > 0 ? taskId.trim() : null;
+}
+
+function safeCommandOperation(command) {
+    const executable = typeof command === 'string'
+        ? command.trim().replace(/^['\"]|['\"]$/g, '').split(/\s+/, 1)[0].split(/[\\/]/).pop().toLowerCase()
+        : '';
+    if (['git', 'git.exe'].includes(executable)) return 'run a version-control operation';
+    if (['npm', 'npm.cmd', 'npx', 'npx.cmd', 'node', 'node.exe'].includes(executable)) return 'run a Node workspace operation';
+    if (['php', 'php.exe', 'artisan', 'composer', 'composer.bat'].includes(executable)) return 'run a PHP workspace operation';
+    return 'run a workspace command';
 }
 
 /**
@@ -304,11 +367,20 @@ function approvalIpcPath(filename) {
     return path.resolve(__dirname, '..', 'storage', 'app', 'agent_ipc', filename);
 }
 
-function publishApproval(brain, approvalId, message) {
+function approvalType(method) {
+    if (method === 'item/fileChange/requestApproval') return 'file_change';
+    if (method === 'item/permissions/requestApproval') return 'sandbox_access';
+    return 'workspace_command';
+}
+
+function publishApproval(brain, approvalId, _message, taskId = null, type = 'workspace_command') {
     return new Promise((resolve) => {
-        const body = JSON.stringify({ brain, message: `${message} [APPROVAL:${approvalId}]` });
+        const safeId = safeTaskId(taskId);
+        if (!safeId) return resolve();
+        const payload = { approval_id: approvalId, task_id: safeId, brain, type };
+        const body = JSON.stringify(payload);
         const request = require('http').request({
-            hostname: '127.0.0.1', port: 8001, path: '/api/webhook/brain-message', method: 'POST',
+            hostname: '127.0.0.1', port: 8001, path: '/api/webhook/brain-approval', method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
         }, (response) => { response.resume(); resolve(); });
         request.setTimeout(3000, () => { request.destroy(); resolve(); });
@@ -318,9 +390,11 @@ function publishApproval(brain, approvalId, message) {
     });
 }
 
-function publishActivity(brain, message) {
+function publishActivity(brain, message, taskId = null) {
     return new Promise((resolve) => {
-        const body = JSON.stringify({ brain, message });
+        const payload = { brain, message };
+        if (safeTaskId(taskId)) payload.task_id = safeTaskId(taskId);
+        const body = JSON.stringify(payload);
         const request = require('http').request({
             hostname: '127.0.0.1', port: 8001, path: '/api/webhook/brain-message', method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
@@ -388,8 +462,11 @@ module.exports = {
     activityDescription,
     approvalDescription,
     approvalResponse,
+    approvalType,
     cancelActiveTask,
     queryBrain,
     resetBrainPool,
+    discoverPhpDirectory,
     shouldBroadcastActivity,
+    safeCommandOperation,
 };

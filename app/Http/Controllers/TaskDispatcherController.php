@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Events\BrainMessageBroadcast;
-use App\Events\BrainStatusBroadcast;
-use App\Models\BrainStatus;
 use App\Services\BrainMessageStore;
 use App\Services\BrainTaskStore;
 use App\Services\TaskIntentDiscernment;
@@ -235,45 +233,66 @@ class TaskDispatcherController extends Controller
         }
     }
 
-    public function abortTask(Request $request, BrainMessageStore $messageStore)
+    public function abortTask(Request $request, BrainMessageStore $messageStore, BrainTaskStore $taskStore, ?string $taskId = null)
     {
-        // 1. Empty the task queue file
+        $requestedTaskId = $taskId ?? $request->input('task_id');
+        if ($requestedTaskId !== null && ! is_string($requestedTaskId)) {
+            throw ValidationException::withMessages(['task_id' => 'Invalid task ID.']);
+        }
+
+        $tasks = $requestedTaskId !== null
+            ? \App\Models\BrainTask::query()->whereKey($requestedTaskId)->get()
+            : \App\Models\BrainTask::query()->whereIn('status', [
+                \App\Models\BrainTask::QUEUED,
+                \App\Models\BrainTask::ASSIGNED,
+                \App\Models\BrainTask::RUNNING,
+                \App\Models\BrainTask::APPROVAL_REQUIRED,
+            ])->get();
+        if ($requestedTaskId !== null && $tasks->isEmpty()) {
+            abort(404);
+        }
+
+        $activeTaskIds = $tasks->filter(fn ($task) => in_array($task->status, [\App\Models\BrainTask::ASSIGNED, \App\Models\BrainTask::RUNNING, \App\Models\BrainTask::APPROVAL_REQUIRED], true))->pluck('id')->all();
+        foreach ($tasks as $task) {
+            $taskStore->cancel($task);
+        }
+
+        // Remove only cancelled entries. A task-specific cancellation must not
+        // discard unrelated queued work.
         $queueFile = $this->agentIpcPath('task_queue.json');
-        file_put_contents($queueFile, json_encode([]));
+        $queue = file_exists($queueFile) ? json_decode(file_get_contents($queueFile), true) : [];
+        $queue = is_array($queue) ? $queue : [];
+        $cancelledIds = $tasks->pluck('id')->all();
+        $queue = array_values(array_filter($queue, fn ($payload) => ! is_array($payload) || ! in_array($payload['task_id'] ?? null, $cancelledIds, true)));
+        file_put_contents($queueFile, json_encode($queue, JSON_PRETTY_PRINT), LOCK_EX);
 
-        // Signal the watcher to interrupt any active Codex turn, not just queued work.
-        $abortFile = $this->agentIpcPath('abort_task.json');
-        file_put_contents($abortFile, json_encode(['timestamp' => now()->toIso8601String()]));
+        // Only an active task needs an interruption signal.
+        if ($requestedTaskId === null || $activeTaskIds !== []) {
+            $abortFile = $this->agentIpcPath('abort_task.json');
+            file_put_contents($abortFile, json_encode(['task_ids' => $activeTaskIds, 'timestamp' => now()->toIso8601String()]), LOCK_EX);
+        }
 
-        // 2. Remove pending task file and speaking lock
+        // Remove the pending payload only when it belongs to a cancelled task.
         $pendingFile = $this->agentIpcPath('pending_task.json');
-        if (file_exists($pendingFile)) {
+        $pending = file_exists($pendingFile) ? json_decode(file_get_contents($pendingFile), true) : null;
+        if (is_array($pending) && in_array($pending['task_id'] ?? null, $cancelledIds, true)) {
             @unlink($pendingFile);
         }
 
         $lockFile = $this->agentIpcPath('speaking.lock');
-        if (file_exists($lockFile)) {
+        if (($requestedTaskId === null || $activeTaskIds !== []) && file_exists($lockFile)) {
             @unlink($lockFile);
         }
 
-        // 3. Reset DB statuses and broadcast idle state for all personas
-        $brains = ['Architect', 'Senior_Dev', 'Junior_Dev', 'Security'];
-        foreach ($brains as $b) {
-            BrainStatus::updateOrCreate(
-                ['name' => $b],
-                ['status' => 'idle', 'current_task' => null]
-            );
-            event(new BrainStatusBroadcast($b, 'idle', null));
-        }
-
-        // 4. Log and broadcast cancellation notification
-        $abortMsg = '[Senior_Dev]: Task execution interrupted and queue cleared by user.';
+        // Log only a safe cancellation outcome, never task transport text.
+        $abortMsg = '[Senior_Dev]: Task cancellation recorded.';
         $messageStore->record('Senior_Dev', $abortMsg);
         event(new BrainMessageBroadcast('Senior_Dev', $abortMsg));
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Task queue cleared and execution aborted successfully',
+            'message' => 'Task cancellation recorded successfully',
+            'cancelled_task_ids' => $cancelledIds,
         ]);
     }
 
@@ -298,26 +317,6 @@ class TaskDispatcherController extends Controller
     public function getHistory(BrainMessageStore $messageStore)
     {
         return response()->json($messageStore->recent());
-    }
-
-    public function resolveApproval(Request $request, string $approvalId, BrainMessageStore $messageStore)
-    {
-        $request->validate(['decision' => ['required', 'in:accept,decline']]);
-        if (! preg_match('/^approval-[a-z0-9-]+$/i', $approvalId)) {
-            throw ValidationException::withMessages(['approvalId' => 'Invalid approval request.']);
-        }
-
-        $file = $this->agentIpcPath('approval_decisions.json');
-        $existing = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
-        $decisions = is_array($existing) ? $existing : [];
-        $decisions[] = ['id' => $approvalId, 'decision' => $request->string('decision')->value(), 'timestamp' => now()->toIso8601String()];
-        file_put_contents($file, json_encode(array_slice($decisions, -100), JSON_PRETTY_PRINT), LOCK_EX);
-
-        $message = sprintf('Approval %s: %s.', $request->string('decision')->value(), $approvalId);
-        $messageStore->record('SYSTEM', $message);
-        event(new BrainMessageBroadcast('SYSTEM', $message));
-
-        return response()->json(['status' => 'success']);
     }
 
     private function agentIpcPath(string $filename): string

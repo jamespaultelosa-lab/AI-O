@@ -8,6 +8,8 @@ const IPC_DIRECTORY = path.resolve(__dirname, '..', 'storage', 'app', 'agent_ipc
 const TASK_FILE = path.join(IPC_DIRECTORY, 'pending_task.json');
 const QUEUE_FILE = path.join(IPC_DIRECTORY, 'task_queue.json');
 const ABORT_FILE = path.join(IPC_DIRECTORY, 'abort_task.json');
+let lastTimestamp = null;
+let isProcessing = false;
 
 function sendWebhook(endpoint, data) {
     return new Promise((resolve) => {
@@ -35,6 +37,29 @@ function sendWebhook(endpoint, data) {
     });
 }
 
+function normalizeTaskPayload(payload) {
+    if (!payload
+        || typeof payload.display_task !== 'string' || payload.display_task.trim().length === 0
+        || typeof payload.transport_task !== 'string' || payload.transport_task.trim().length === 0
+        || typeof payload.timestamp !== 'string' || payload.timestamp.length === 0) {
+        return null;
+    }
+
+    return {
+        // task_id was added after the original watcher protocol. Preserve it
+        // when present, but keep older queue files fully valid.
+        task_id: typeof payload.task_id === 'string' && payload.task_id.trim().length > 0
+            ? payload.task_id.trim()
+            : null,
+        display_task: payload.display_task,
+        transport_task: payload.transport_task,
+        images: Array.isArray(payload.images) ? payload.images.filter((image) => typeof image === 'string') : [],
+        assigned_model: typeof payload.assigned_model === 'string' ? payload.assigned_model : '',
+        timestamp: payload.timestamp,
+    };
+}
+
+function startWatcher() {
 fs.mkdirSync(IPC_DIRECTORY, { recursive: true });
 
 // Keep mutable runtime state in Laravel's writable storage area rather than
@@ -74,26 +99,6 @@ if (!fs.existsSync(ABORT_FILE)) {
 }
 
 console.log('Watching for new tasks at:', QUEUE_FILE);
-
-let lastTimestamp = null;
-let isProcessing = false;
-
-function normalizeTaskPayload(payload) {
-    if (!payload
-        || typeof payload.display_task !== 'string' || payload.display_task.trim().length === 0
-        || typeof payload.transport_task !== 'string' || payload.transport_task.trim().length === 0
-        || typeof payload.timestamp !== 'string' || payload.timestamp.length === 0) {
-        return null;
-    }
-
-    return {
-        display_task: payload.display_task,
-        transport_task: payload.transport_task,
-        images: Array.isArray(payload.images) ? payload.images.filter((image) => typeof image === 'string') : [],
-        assigned_model: typeof payload.assigned_model === 'string' ? payload.assigned_model : '',
-        timestamp: payload.timestamp,
-    };
-}
 
 async function processQueueOrPending() {
     if (isProcessing) return;
@@ -170,4 +175,10 @@ if (fs.existsSync(ABORT_FILE)) {
     fs.watch(ABORT_FILE, () => cancelActiveTask());
 }
 
-module.exports = { normalizeTaskPayload };
+}
+
+if (require.main === module) {
+    startWatcher();
+}
+
+module.exports = { normalizeTaskPayload, startWatcher };

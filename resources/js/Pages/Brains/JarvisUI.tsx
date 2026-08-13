@@ -19,12 +19,106 @@ interface JarvisUIProps {
     brains: Record<string, BrainData>;
 }
 
+type TaskStatus = 'queued' | 'assigned' | 'running' | 'approval_required' | 'completed' | 'failed' | 'cancelled' | string;
+
+interface TaskObservation {
+    id: string;
+    displaySummary: string;
+    status: TaskStatus;
+    safePhase: string | null;
+    terminalReason: string | null;
+    startedAt: string | null;
+    completedAt: string | null;
+    createdAt: string | null;
+    elapsedSeconds: number | null;
+}
+
+interface ApprovalObservation {
+    id: string;
+    summary: string;
+    status: string;
+    requestingBrain: string;
+}
+
+const ACTIVE_TASK_STATUSES = new Set(['queued', 'assigned', 'running', 'approval_required']);
+const RETRY_ELIGIBLE_STATUSES = new Set(['failed', 'cancelled']);
+
+const toTaskObservation = (value: unknown): TaskObservation | null => {
+    if (!value || typeof value !== 'object') return null;
+
+    const task = value as Record<string, unknown>;
+    const id = typeof task.id === 'string' ? task.id : null;
+    const displaySummary = typeof task.display_summary === 'string'
+        ? task.display_summary
+        : typeof task.safe_summary === 'string'
+            ? task.safe_summary
+            : null;
+
+    if (!id || !displaySummary) return null;
+
+    return {
+        id,
+        displaySummary,
+        status: typeof task.status === 'string' ? task.status : 'queued',
+        safePhase: typeof task.safe_phase === 'string' ? task.safe_phase : null,
+        terminalReason: typeof task.terminal_reason === 'string' ? task.terminal_reason : null,
+        startedAt: typeof task.started_at === 'string' ? task.started_at : null,
+        completedAt: typeof task.completed_at === 'string' ? task.completed_at : null,
+        createdAt: typeof task.created_at === 'string' ? task.created_at : null,
+        elapsedSeconds: typeof task.elapsed_seconds === 'number' ? task.elapsed_seconds : null,
+    };
+};
+
+const extractTaskObservations = (payload: unknown): TaskObservation[] => {
+    const candidate = Array.isArray(payload)
+        ? payload
+        : payload && typeof payload === 'object'
+            ? (payload as { tasks?: unknown; data?: unknown }).tasks ?? (payload as { data?: unknown }).data
+            : [];
+
+    return Array.isArray(candidate)
+        ? candidate.map(toTaskObservation).filter((task): task is TaskObservation => task !== null)
+        : [];
+};
+
+const extractApprovals = (payload: unknown): ApprovalObservation[] => {
+    const data = payload && typeof payload === 'object' && Array.isArray((payload as { data?: unknown }).data)
+        ? (payload as { data: unknown[] }).data
+        : [];
+    return data.flatMap((value) => {
+        if (!value || typeof value !== 'object') return [];
+        const approval = value as Record<string, unknown>;
+        if (typeof approval.id !== 'string' || typeof approval.summary !== 'string' || typeof approval.status !== 'string') return [];
+        return [{ id: approval.id, summary: approval.summary, status: approval.status, requestingBrain: typeof approval.requesting_brain === 'string' ? approval.requesting_brain : 'SYSTEM' }];
+    });
+};
+
+const formatElapsedTime = (task: TaskObservation, now: number) => {
+    const seconds = task.elapsedSeconds ?? (() => {
+        const start = Date.parse(task.startedAt ?? task.createdAt ?? '');
+        const end = Date.parse(task.completedAt ?? '');
+        if (Number.isNaN(start)) return null;
+        return Math.max(0, Math.floor(((Number.isNaN(end) ? now : end) - start) / 1000));
+    })();
+
+    if (seconds === null) return 'Awaiting start';
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    return hours > 0
+        ? `${hours}h ${minutes}m`
+        : minutes > 0
+            ? `${minutes}m ${remainingSeconds}s`
+            : `${remainingSeconds}s`;
+};
+
 const BACKGROUND_ACTIVITY_MESSAGES = new Set([
     'Reviewing the task approach...',
     'Running a workspace command...',
     'Preparing workspace changes...',
     'Using an integrated tool...',
     'Checking referenced information...',
+    'Still working on the current task (over one minute). You can safely choose Stop to cancel it.',
 ]);
 
 const parseMarkdownBold = (input: string, isLightMode = false) => {
@@ -82,6 +176,11 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
     const [activeTab, setActiveTab] = useState<'thoughts' | 'memory'>('thoughts');
     const [memories, setMemories] = useState<MemoryEntry[]>([]);
     const [expandedMemory, setExpandedMemory] = useState<string | null>(null);
+    const [tasks, setTasks] = useState<TaskObservation[]>([]);
+    const [approvals, setApprovals] = useState<ApprovalObservation[]>([]);
+    const [resolvingApprovalIds, setResolvingApprovalIds] = useState<Set<string>>(() => new Set());
+    const [taskPollFailed, setTaskPollFailed] = useState(false);
+    const [taskClock, setTaskClock] = useState(() => Date.now());
 
     const clearMemories = () => {
         setMemories([]);
@@ -409,10 +508,20 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
     };
 
     const resolveApproval = async (approvalId: string, decision: 'accept' | 'decline') => {
+        const previous = approvals.find(approval => approval.id === approvalId)?.status ?? 'pending';
+        setResolvingApprovalIds(current => new Set(current).add(approvalId));
+        setApprovals(current => current.map(approval => approval.id === approvalId ? { ...approval, status: decision === 'accept' ? 'accepted' : 'declined' } : approval));
         try {
             await axios.post(`/api/brain/approvals/${approvalId}`, { decision });
         } catch (err) {
             console.error('Failed to resolve approval', err);
+            setApprovals(current => current.map(approval => approval.id === approvalId ? { ...approval, status: previous } : approval));
+        } finally {
+            setResolvingApprovalIds(current => {
+                const next = new Set(current);
+                next.delete(approvalId);
+                return next;
+            });
         }
     };
 
@@ -430,7 +539,47 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         return () => clearInterval(interval);
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        let requestInFlight = false;
+
+        const fetchTasks = async () => {
+            if (requestInFlight) return;
+            requestInFlight = true;
+            try {
+                const [response, approvalResponse] = await Promise.all([
+                    axios.get('/api/brain/tasks'),
+                    axios.get('/api/brain/approvals'),
+                ]);
+                if (!cancelled) {
+                    setTasks(extractTaskObservations(response.data));
+                    setApprovals(extractApprovals(approvalResponse.data));
+                    setTaskPollFailed(false);
+                }
+            } catch (err) {
+                if (!cancelled) setTaskPollFailed(true);
+            } finally {
+                requestInFlight = false;
+            }
+        };
+
+        fetchTasks();
+        const interval = setInterval(fetchTasks, 3000);
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
+    }, []);
+
+    useEffect(() => {
+        const interval = setInterval(() => setTaskClock(Date.now()), 1000);
+        return () => clearInterval(interval);
+    }, []);
+
     const isTaskActive = Object.values(brains).some(b => b.status === 'executing' || b.status === 'thinking') || queueCount > 0;
+    const activeTask = tasks.find(task => ACTIVE_TASK_STATUSES.has(task.status.toLowerCase()));
+    const latestTask = activeTask ?? tasks[0];
+    const pendingApprovals = approvals.filter(approval => approval.status === 'pending');
 
     return (
         <>
@@ -590,6 +739,52 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                             className={`flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 scrollbar-thin scrollbar-track-transparent transition-colors duration-500 ${isLightMode ? 'scrollbar-thumb-slate-300' : 'scrollbar-thumb-cyan-900/50'} ${activeTab === 'thoughts' ? '' : 'hidden'}`}
                             onScroll={handleScroll}
                         >
+                            <section
+                                aria-label="Task status"
+                                aria-live="polite"
+                                className={`rounded-lg border p-3 transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-white shadow-sm' : 'border-cyan-900/60 bg-cyan-950/20'}`}
+                            >
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className={`text-[10px] font-bold uppercase tracking-[0.16em] ${isLightMode ? 'text-slate-500' : 'text-cyan-600'}`}>Task observability</span>
+                                    {latestTask ? (
+                                        <span className={`shrink-0 rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${latestTask.status.toLowerCase() === 'failed'
+                                            ? (isLightMode ? 'border-red-300 bg-red-50 text-red-800' : 'border-red-500/40 bg-red-950/40 text-red-300')
+                                            : latestTask.status.toLowerCase() === 'cancelled'
+                                                ? (isLightMode ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-amber-500/40 bg-amber-950/40 text-amber-300')
+                                                : ACTIVE_TASK_STATUSES.has(latestTask.status.toLowerCase())
+                                                    ? (isLightMode ? 'border-cyan-300 bg-cyan-50 text-cyan-800' : 'border-cyan-500/40 bg-cyan-950/50 text-cyan-300')
+                                                    : (isLightMode ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-emerald-500/40 bg-emerald-950/40 text-emerald-300')
+                                            }`}
+                                        >
+                                            {latestTask.status.replace(/_/g, ' ')}
+                                        </span>
+                                    ) : (
+                                        <span className={`text-[10px] ${isLightMode ? 'text-slate-400' : 'text-cyan-800'}`}>No tasks yet</span>
+                                    )}
+                                </div>
+
+                                {latestTask && (
+                                    <div className="mt-2 space-y-1.5">
+                                        <p className={`text-xs leading-relaxed ${isLightMode ? 'text-slate-800' : 'text-cyan-100'}`}>{latestTask.displaySummary}</p>
+                                        <div className={`flex flex-wrap gap-x-3 gap-y-1 text-[10px] uppercase tracking-wide ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>
+                                            <span>Elapsed: {formatElapsedTime(latestTask, taskClock)}</span>
+                                            {latestTask.safePhase && <span>Phase: {latestTask.safePhase}</span>}
+                                            {RETRY_ELIGIBLE_STATUSES.has(latestTask.status.toLowerCase()) && <span className={isLightMode ? 'text-amber-700 font-bold' : 'text-amber-400 font-bold'}>Retry eligible</span>}
+                                        </div>
+                                        {latestTask.terminalReason && (
+                                            <p className={`border-l-2 pl-2 text-[11px] leading-relaxed ${isLightMode ? 'border-slate-300 text-slate-600' : 'border-cyan-800 text-cyan-300/80'}`}>
+                                                Terminal reason: {latestTask.terminalReason}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                                {taskPollFailed && (
+                                    <p className={`mt-2 text-[10px] ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>Task status is temporarily unavailable. Retrying automatically.</p>
+                                )}
+                                {pendingApprovals.length > 0 && (
+                                    <p className={`mt-2 text-[10px] ${isLightMode ? 'text-amber-700' : 'text-amber-400'}`}>Approval inbox: {pendingApprovals.length} pending</p>
+                                )}
+                            </section>
                             {messages.length === 0 ? (
                                 <div className={`text-xs text-center mt-10 tracking-widest italic ${isLightMode ? 'text-slate-400' : 'text-cyan-800/50'}`}>AWAITING THOUGHTS...</div>
                             ) : (
@@ -632,14 +827,18 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                             cleanText = cleanText.replace(/\[OPTIONS:\s*(.+?)\]/i, '').trim();
                                         }
 
-                                        const isBackgroundActivity = BACKGROUND_ACTIVITY_MESSAGES.has(cleanText)
+                                        const isCollaborationActivity = cleanText.startsWith('[COLLABORATION] ');
+                                        const isAutonomyActivity = cleanText.startsWith('[AUTONOMY] ');
+                                        if (isCollaborationActivity) cleanText = cleanText.replace(/^\[COLLABORATION\]\s*/, '');
+                                        if (isAutonomyActivity) cleanText = cleanText.replace(/^\[AUTONOMY\]\s*/, '');
+                                        const isBackgroundActivity = (BACKGROUND_ACTIVITY_MESSAGES.has(cleanText) || isCollaborationActivity || isAutonomyActivity)
                                             && !approvalId
                                             && optionGroups.length === 0
                                             && imageList.length === 0;
 
                                         if (isBackgroundActivity) {
                                             return (
-                                                <div key={msg.id} className={`flex items-center gap-2 px-1.5 py-1 text-[10px] tracking-wide ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>
+                                                <div key={msg.id} className={`flex items-center gap-2 px-1.5 py-1 text-[10px] tracking-wide ${(isCollaborationActivity || isAutonomyActivity) ? (isLightMode ? 'text-indigo-600' : 'text-violet-400') : (isLightMode ? 'text-slate-500' : 'text-cyan-700')}`}>
                                                     <span className={`h-1 w-1 rounded-full ${isLightMode ? 'bg-slate-400' : 'bg-cyan-700'}`} aria-hidden="true" />
                                                     <span>{cleanText}</span>
                                                 </div>
@@ -703,10 +902,12 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                             </div>
                                                         ))}
                                                         {approvalId && (
-                                                            <div className="mt-3 flex flex-wrap gap-2">
-                                                                <button onClick={() => resolveApproval(approvalId, 'accept')} disabled={isSubmitting} className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border disabled:opacity-50 ${isLightMode ? 'border-green-700 bg-green-100 text-green-900 hover:bg-green-200' : 'border-green-500/60 bg-green-950/40 text-green-300 hover:bg-green-900/70'}`}>Approve</button>
-                                                                <button onClick={() => resolveApproval(approvalId, 'decline')} disabled={isSubmitting} className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border disabled:opacity-50 ${isLightMode ? 'border-red-700 bg-red-100 text-red-900 hover:bg-red-200' : 'border-red-500/60 bg-red-950/40 text-red-300 hover:bg-red-900/70'}`}>Deny</button>
-                                                            </div>
+                                                            (approvals.find(approval => approval.id === approvalId)?.status ?? 'pending') === 'pending' ? (
+                                                                <div className="mt-3 flex flex-wrap gap-2">
+                                                                    <button onClick={() => resolveApproval(approvalId, 'accept')} disabled={isSubmitting || resolvingApprovalIds.has(approvalId)} className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border disabled:opacity-50 ${isLightMode ? 'border-green-700 bg-green-100 text-green-900 hover:bg-green-200' : 'border-green-500/60 bg-green-950/40 text-green-300 hover:bg-green-900/70'}`}>Approve</button>
+                                                                    <button onClick={() => resolveApproval(approvalId, 'decline')} disabled={isSubmitting || resolvingApprovalIds.has(approvalId)} className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border disabled:opacity-50 ${isLightMode ? 'border-red-700 bg-red-100 text-red-900 hover:bg-red-200' : 'border-red-500/60 bg-red-950/40 text-red-300 hover:bg-red-900/70'}`}>Deny</button>
+                                                                </div>
+                                                            ) : <p className={`mt-3 text-[10px] uppercase tracking-wide ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>Approval {(approvals.find(approval => approval.id === approvalId)?.status ?? 'resolved')}</p>
                                                         )}
                                                     </div>
                                                 </div>

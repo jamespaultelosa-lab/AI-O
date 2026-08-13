@@ -9,6 +9,7 @@ const ROLE_DIRECTORIES = {
 };
 const MAX_CONTEXT_CHARS = 12000;
 const MAX_LEARNING_CHARS = 700;
+const ENGINEERING_PLAYBOOK = path.join(__dirname, 'brain_engineering_playbook.md');
 const LEARNING_PATTERN = /\[\[VAULT_LEARNING:\s*(Observation:\s*[^|\]]+)\|\s*(Evidence:\s*[^|\]]+)\|\s*(Rule:\s*[^\]]+)\]\]/i;
 const SECRET_PATTERN = /(?:api[_ -]?key|secret|password|token|authorization:\s*bearer|private key)/i;
 
@@ -25,9 +26,10 @@ function readBounded(file, remaining) {
 }
 
 function loadVaultContext(brain) {
+    const playbook = readBounded(ENGINEERING_PLAYBOOK, 6000);
     const root = vaultRoot();
     const roleDirectory = ROLE_DIRECTORIES[brain];
-    if (!root || !roleDirectory || !fs.existsSync(root)) return '';
+    if (!root || !roleDirectory || !fs.existsSync(root)) return playbook;
 
     const files = [
         path.join(root, 'Global_Context', 'Consciousness_Protocol.md'),
@@ -40,7 +42,8 @@ function loadVaultContext(brain) {
         path.join(root, 'Brains', roleDirectory, 'Mistakes.md'),
     ];
     const sections = [];
-    let remaining = MAX_CONTEXT_CHARS;
+    let remaining = MAX_CONTEXT_CHARS - playbook.length;
+    if (playbook.trim()) sections.push(`Source: ${path.basename(ENGINEERING_PLAYBOOK)}\n${playbook.trim()}`);
     for (const file of files) {
         if (remaining <= 0 || !fs.existsSync(file)) continue;
         const content = readBounded(file, remaining);
