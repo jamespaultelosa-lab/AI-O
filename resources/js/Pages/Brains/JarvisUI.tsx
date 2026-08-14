@@ -790,25 +790,27 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
 
                         <div className={`border-b p-3 transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-100/85' : 'border-cyan-900/50 bg-cyan-950/20'}`}>
                             <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                                <div className={`flex p-1 rounded-lg items-center ${isLightMode ? 'bg-slate-200/50' : 'bg-black/40 shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)] border border-cyan-900/30'}`} aria-label="Panel selection">
-                                    <button type="button" onClick={() => setActiveTab('thoughts')} aria-pressed={activeTab === 'thoughts'} className={`flex items-center min-h-8 rounded-md px-3.5 py-1 text-[10px] font-bold tracking-wider uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 active:scale-[0.98] ${activeTab === 'thoughts' ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50' : 'bg-cyan-900/40 text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] border border-cyan-700/50') : (isLightMode ? 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent' : 'text-cyan-700 hover:text-cyan-300 hover:bg-white/5 border border-transparent')}`}>
-                                        Thought Stream
-                                    </button>
-                                    <button type="button" onClick={() => setActiveTab('memory')} aria-pressed={activeTab === 'memory'} className={`flex items-center min-h-8 gap-1.5 rounded-md px-3.5 py-1 text-[10px] font-bold tracking-wider uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-[0.98] ${activeTab === 'memory' ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50' : 'bg-purple-900/40 text-purple-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] border border-purple-700/50') : (isLightMode ? 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent' : 'text-purple-700 hover:text-purple-300 hover:bg-white/5 border border-transparent')}`}>
-                                        <span>Memory Vault</span>
-                                        {memories.length > 0 && <span className={`flex items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] ${activeTab === 'memory' ? (isLightMode ? 'bg-slate-100 text-slate-600' : 'bg-purple-950 border border-purple-500/30 text-purple-200') : (isLightMode ? 'bg-slate-200 text-slate-500' : 'bg-purple-900/30 text-purple-400')}`}>{memories.length}</span>}
-                                    </button>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <div className={`flex p-1 rounded-lg items-center ${isLightMode ? 'bg-slate-200/50' : 'bg-black/40 shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)] border border-cyan-900/30'}`} aria-label="Panel selection">
+                                        <button type="button" onClick={() => setActiveTab('thoughts')} aria-pressed={activeTab === 'thoughts'} className={`flex items-center min-h-8 rounded-md px-3.5 py-1 text-[10px] font-bold tracking-wider uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 active:scale-[0.98] ${activeTab === 'thoughts' ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50' : 'bg-cyan-900/40 text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] border border-cyan-700/50') : (isLightMode ? 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent' : 'text-cyan-700 hover:text-cyan-300 hover:bg-white/5 border border-transparent')}`}>
+                                            Thought Stream
+                                        </button>
+                                        <button type="button" onClick={() => setActiveTab('memory')} aria-pressed={activeTab === 'memory'} className={`flex items-center min-h-8 gap-1.5 rounded-md px-3.5 py-1 text-[10px] font-bold tracking-wider uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-[0.98] ${activeTab === 'memory' ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50' : 'bg-purple-900/40 text-purple-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] border border-purple-700/50') : (isLightMode ? 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent' : 'text-purple-700 hover:text-purple-300 hover:bg-white/5 border border-transparent')}`}>
+                                            <span>Memory Vault</span>
+                                            {memories.length > 0 && <span className={`flex items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] ${activeTab === 'memory' ? (isLightMode ? 'bg-slate-100 text-slate-600' : 'bg-purple-950 border border-purple-500/30 text-purple-200') : (isLightMode ? 'bg-slate-200 text-slate-500' : 'bg-purple-900/30 text-purple-400')}`}>{memories.length}</span>}
+                                        </button>
+                                    </div>
+                                    {activeTab === 'memory' && memories.length > 0 && (
+                                        <button type="button" onClick={clearMemories} aria-label="Clear memory vault view" className={`min-h-8 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400 transition-all hover:bg-red-500/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400`}>Clear View</button>
+                                    )}
                                 </div>
-                                {activeTab === 'memory' && memories.length > 0 && (
-                                    <button type="button" onClick={clearMemories} aria-label="Clear memory vault view" className={`min-h-8 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400 transition-all hover:bg-red-500/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400`}>Clear View</button>
-                                )}
 
-                                <div className="flex min-w-0 items-center gap-2 sm:gap-3 ml-auto" ref={conversationControlRef}>
+                                <div className="flex min-w-0 items-center gap-2 sm:gap-3" ref={conversationControlRef}>
                                     <div className="relative min-w-0 flex-1">
-                                        <button ref={conversationDisclosureRef} type="button" onClick={() => setIsConversationDropdownOpen((open) => !open)} aria-expanded={isConversationDropdownOpen} aria-controls="conversation-list" aria-label={`Current chat: ${activeConversation?.title ?? 'Loading chat'}`} title={activeConversation?.title ?? 'Loading chat'} className={`flex min-h-10 w-full min-w-0 items-center gap-2.5 rounded-lg px-3 text-left transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isLightMode ? 'hover:bg-slate-200/50' : 'hover:bg-white/5'}`}>
+                                        <button ref={conversationDisclosureRef} type="button" onClick={() => setIsConversationDropdownOpen((open) => !open)} aria-expanded={isConversationDropdownOpen} aria-controls="conversation-list" aria-label={`Current chat: ${activeConversation?.title ?? 'Loading chat'}`} title={activeConversation?.title ?? 'Loading chat'} className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg px-2 text-left transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isLightMode ? 'hover:bg-slate-200/50' : 'hover:bg-white/5'}`}>
                                             <span className={`shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] ${isLightMode ? 'text-slate-400' : 'text-cyan-700'}`}>Current chat</span>
                                             <span className={`min-w-0 flex-1 truncate text-xs font-bold tracking-wide ${isLightMode ? 'text-slate-700' : 'text-cyan-100'}`}>{activeConversation?.title ?? 'Loading chat'}</span>
-                                            <span aria-hidden="true" className={`shrink-0 text-[10px] ${isLightMode ? 'text-slate-400' : 'text-cyan-600'}`}>â–¾</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${isLightMode ? 'text-slate-400' : 'text-cyan-600'}`}><path d="m6 9 6 6 6-6" /></svg>
                                         </button>
                                         {isConversationDropdownOpen && (
                                             <div id="conversation-list" className={`absolute right-0 top-full z-50 mt-2 w-full min-w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border shadow-2xl backdrop-blur-xl ${isLightMode ? 'bg-white/90 border-slate-200' : 'bg-black/80 border-cyan-900/50 shadow-[0_12px_40px_rgba(0,0,0,0.8)]'}`}>
@@ -818,14 +820,14 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                     ) : conversations.map((conv) => (
                                                         <button key={conv.id} ref={(element) => { if (element) conversationOptionRefs.current.set(conv.id, element); else conversationOptionRefs.current.delete(conv.id); }} type="button" onClick={() => void switchConversation(conv)} aria-current={activeConversation?.id === conv.id ? 'true' : undefined} title={conv.title} className={`flex min-h-12 w-full items-center gap-3 border-b px-4 py-3 text-left text-xs transition-colors focus-visible:outline-none focus-visible:bg-white/5 ${isLightMode ? 'border-slate-100 hover:bg-slate-50' : 'border-white/5 hover:bg-white/5'} ${activeConversation?.id === conv.id ? (isLightMode ? 'bg-slate-100 font-bold' : 'bg-white/5 font-bold text-cyan-300') : (isLightMode ? 'text-slate-600' : 'text-cyan-500')}`}>
                                                             <span className="min-w-0 flex-1 truncate">{conv.title}</span>
-                                                            {activeConversation?.id === conv.id && <span aria-hidden="true" className="shrink-0 font-bold text-cyan-400">âœ“</span>}
+                                                            {activeConversation?.id === conv.id && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-cyan-400"><path d="M20 6 9 17l-5-5" /></svg>}
                                                         </button>
                                                     ))}
                                                 </div>
                                             </div>
                                         )}
                                     </div>
-                                    <button type="button" onClick={createConversation} disabled={isCreatingConversation} aria-label="Create new chat" aria-busy={isCreatingConversation} className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all active:scale-[0.92] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isLightMode ? 'bg-slate-900 text-white shadow-sm hover:bg-slate-800' : 'bg-cyan-400 text-cyan-950 shadow-[0_0_16px_rgba(34,211,238,0.2)] hover:bg-cyan-300 hover:shadow-[0_0_24px_rgba(34,211,238,0.4)]'}`}>
+                                    <button type="button" onClick={createConversation} disabled={isCreatingConversation} aria-label="Create new chat" aria-busy={isCreatingConversation} className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all active:scale-[0.92] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isLightMode ? 'bg-slate-900 text-white shadow-sm hover:bg-slate-800' : 'bg-cyan-400 text-cyan-950 shadow-[0_0_12px_rgba(34,211,238,0.2)] hover:bg-cyan-300 hover:shadow-[0_0_20px_rgba(34,211,238,0.4)]'}`}>
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
                                     </button>
                                     <div className={`hidden sm:flex shrink-0 items-center gap-2 pl-2 border-l ${isLightMode ? 'border-slate-200' : 'border-cyan-900/50'}`}>
@@ -942,10 +944,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                         if (isBackgroundActivity || isSystemMessage) {
                                             return (
                                                 <div key={msg.id} className={`flex items-start gap-2 px-1.5 py-1 text-[10px] tracking-wide ${isSystemMessage
-                                                        ? (isLightMode ? 'text-slate-500 font-mono' : 'text-slate-400 font-mono')
-                                                        : (isCollaborationActivity || isAutonomyActivity)
-                                                            ? (isLightMode ? 'text-indigo-600' : 'text-violet-400')
-                                                            : (isLightMode ? 'text-slate-500' : 'text-cyan-700')
+                                                    ? (isLightMode ? 'text-slate-500 font-mono' : 'text-slate-400 font-mono')
+                                                    : (isCollaborationActivity || isAutonomyActivity)
+                                                        ? (isLightMode ? 'text-indigo-600' : 'text-violet-400')
+                                                        : (isLightMode ? 'text-slate-500' : 'text-cyan-700')
                                                     }`}>
                                                     {isSystemMessage ? (
                                                         <div className="flex flex-col gap-1 w-full mt-2 mb-2">
@@ -971,8 +973,8 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                         return (
                                             <div key={msg.id} className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
                                                 <div className={`max-w-[85%] text-xs leading-6 break-words p-3.5 border shadow-sm transition-colors duration-500 ${isUser
-                                                        ? (isLightMode ? 'bg-slate-800 text-white border-slate-900 rounded-2xl rounded-br-sm' : 'bg-cyan-900 text-cyan-50 border-cyan-700 rounded-2xl rounded-br-sm')
-                                                        : `${getBrainBgColor(msg.brain)} rounded-2xl rounded-bl-sm`
+                                                    ? (isLightMode ? 'bg-slate-800 text-white border-slate-900 rounded-2xl rounded-br-sm' : 'bg-cyan-900 text-cyan-50 border-cyan-700 rounded-2xl rounded-br-sm')
+                                                    : `${getBrainBgColor(msg.brain)} rounded-2xl rounded-bl-sm`
                                                     }`}>
                                                     {!isUser && (
                                                         <div className={`flex items-baseline gap-2 mb-2 pb-1 border-b ${isLightMode ? 'border-slate-200/50' : 'border-cyan-900/50'}`}>
@@ -1201,8 +1203,8 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                             disabled={isSubmitting}
                                             rows={1}
                                             className={`w-full min-h-[48px] max-h-48 resize-y border rounded-xl py-3.5 pl-[38px] pr-4 text-xs font-medium leading-relaxed focus:outline-none transition-all disabled:opacity-50 ${isLightMode
-                                                    ? 'bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 shadow-[inset_0_2px_4px_rgba(15,23,42,0.02)] focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10'
-                                                    : 'bg-black/40 backdrop-blur-md border-cyan-900/50 text-cyan-50 placeholder:text-cyan-700 focus:bg-cyan-950/30 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 shadow-[inset_0_2px_8px_rgba(0,0,0,0.5)]'
+                                                ? 'bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 shadow-[inset_0_2px_4px_rgba(15,23,42,0.02)] focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10'
+                                                : 'bg-black/40 backdrop-blur-md border-cyan-900/50 text-cyan-50 placeholder:text-cyan-700 focus:bg-cyan-950/30 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 shadow-[inset_0_2px_8px_rgba(0,0,0,0.5)]'
                                                 }`}
                                         />
                                     </div>
@@ -1221,8 +1223,8 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                             type="submit"
                                             disabled={!taskInput.trim() && attachedImages.length === 0}
                                             className={`flex items-center justify-center gap-2 px-6 h-[48px] rounded-xl font-bold text-xs tracking-widest uppercase shrink-0 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96] ${isLightMode
-                                                    ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-[0_4px_12px_rgba(15,23,42,0.15)] disabled:shadow-none'
-                                                    : 'bg-cyan-400 text-cyan-950 hover:bg-cyan-300 shadow-[0_0_16px_rgba(34,211,238,0.3)] hover:shadow-[0_0_24px_rgba(34,211,238,0.5)] disabled:shadow-none disabled:bg-cyan-900/40 disabled:text-cyan-700'
+                                                ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-[0_4px_12px_rgba(15,23,42,0.15)] disabled:shadow-none'
+                                                : 'bg-cyan-400 text-cyan-950 hover:bg-cyan-300 shadow-[0_0_16px_rgba(34,211,238,0.3)] hover:shadow-[0_0_24px_rgba(34,211,238,0.5)] disabled:shadow-none disabled:bg-cyan-900/40 disabled:text-cyan-700'
                                                 }`}
                                         >
                                             <span>SEND</span>
