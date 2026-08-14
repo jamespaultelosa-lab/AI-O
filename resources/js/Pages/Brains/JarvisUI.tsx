@@ -922,16 +922,37 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                         const isAutonomyActivity = cleanText.startsWith('[AUTONOMY] ');
                                         if (isCollaborationActivity) cleanText = cleanText.replace(/^\[COLLABORATION\]\s*/, '');
                                         if (isAutonomyActivity) cleanText = cleanText.replace(/^\[AUTONOMY\]\s*/, '');
+                                        const isSystemMessage = msg.brain === 'SYSTEM';
                                         const isBackgroundActivity = (BACKGROUND_ACTIVITY_MESSAGES.has(cleanText) || isCollaborationActivity || isAutonomyActivity)
                                             && !approvalId
                                             && optionGroups.length === 0
                                             && imageList.length === 0;
 
-                                        if (isBackgroundActivity) {
+                                        if (isBackgroundActivity || isSystemMessage) {
                                             return (
-                                                <div key={msg.id} className={`flex items-center gap-2 px-1.5 py-1 text-[10px] tracking-wide ${(isCollaborationActivity || isAutonomyActivity) ? (isLightMode ? 'text-indigo-600' : 'text-violet-400') : (isLightMode ? 'text-slate-500' : 'text-cyan-700')}`}>
-                                                    <span className={`h-1 w-1 rounded-full ${isLightMode ? 'bg-slate-400' : 'bg-cyan-700'}`} aria-hidden="true" />
-                                                    <span>{cleanText}</span>
+                                                <div key={msg.id} className={`flex items-start gap-2 px-1.5 py-1 text-[10px] tracking-wide ${
+                                                    isSystemMessage
+                                                        ? (isLightMode ? 'text-slate-500 font-mono' : 'text-slate-400 font-mono')
+                                                        : (isCollaborationActivity || isAutonomyActivity)
+                                                            ? (isLightMode ? 'text-indigo-600' : 'text-violet-400')
+                                                            : (isLightMode ? 'text-slate-500' : 'text-cyan-700')
+                                                }`}>
+                                                    {isSystemMessage ? (
+                                                        <div className="flex flex-col gap-1 w-full mt-2 mb-2">
+                                                            <div className="flex items-center gap-2 opacity-60">
+                                                                <span className="font-bold tracking-widest">[SYSTEM]</span>
+                                                                <span>{msg.time}</span>
+                                                            </div>
+                                                            <div className="whitespace-pre-wrap pl-2.5 ml-1 border-l border-current opacity-80 py-0.5">
+                                                                {cleanText}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`h-1 w-1 rounded-full shrink-0 ${isLightMode ? 'bg-slate-400' : 'bg-cyan-700'}`} aria-hidden="true" />
+                                                            <span>{cleanText}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         }
