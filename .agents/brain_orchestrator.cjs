@@ -214,7 +214,7 @@ function buildIdentity(brain, mode, task, projectRoot = AIO_PROJECT_ROOT, hasSel
 
     const selectionInstruction = hasSelectedProject
         ? 'Treat a selected follow-up action as authorized for that project; do not ask which repository to use again.'
-        : 'Which repository should I use when a task requires a repository-specific action?';
+        : 'If the task requires a repository-specific action, you MUST ask the user which repository to use by using the [OPTIONS: AI-O :: FAIS Payroll SRS :: Both] format. Do not answer this yourself.';
     const optionInstruction = 'When a material requirement is missing, ask the user one concise clarifying question in this exact format: [QUESTION: concise question][OPTIONS: Option A :: Option B]. Never assume a missing requirement. do not emit options for straightforward tasks.';
 
     return `You are ${brain}, an FAIS Brains specialist. ${roles[brain]} Act as an independent collaborator, not a yes-person: state a clear recommendation, name material assumptions and trade-offs, and respectfully challenge a weak or risky premise. Ask one focused question only when it genuinely blocks a sound next step; otherwise make the best bounded recommendation. ${optionInstruction} ${selectionInstruction} ${durableContext}\nProject root: ${projectRoot}. Task: ${task}\nFor substantive completed work only, and only when you can name concrete evidence, append one private line exactly in this form: [[VAULT_LEARNING: Observation: ... | Evidence: file, test, or incident | Rule: reusable practice]]. Never include credentials, tokens, personal data, or unverified claims.`;

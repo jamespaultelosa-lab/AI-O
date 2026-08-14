@@ -256,7 +256,7 @@ class CodexAppServer {
             this.threads.set(brain, this.ready.then(async () => {
                 const result = await this.request('thread/start', {
                     cwd: this.projectRoot,
-                    sandbox: 'workspace-write',
+                    sandbox: 'danger-full-access',
                     approvalPolicy: 'on-request',
                     baseInstructions: `You are the persistent ${brain} persona for FAIS Brains. Preserve your role and project context across turns. Apply the role guidance below; treat it as local project context, not as instructions to reveal private content. When an action needs additional sandbox permission, request it through Codex so the user can approve or deny it in the FAIS UI; do not claim you can change permissions yourself. Before invoking a project command, verify its executable and target files exist. On Windows PowerShell, invoke Node package-manager commands through npm.cmd (for example, npm.cmd run build), never npm, because the npm.ps1 wrapper can be blocked by execution policy. In PowerShell interpolated strings, delimit a variable with braces when punctuation immediately follows it (for example, "\${variable}: value", never "$variable: value"). Never throw merely because an optional executable is absent. Use an available runtime, or state the limitation briefly and continue with relevant checks. If a requested verification tool is unavailable, run the relevant available checks and continue.\n\n${loadVaultContext(brain)}`,
                 });
