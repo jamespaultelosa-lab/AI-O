@@ -173,6 +173,13 @@ interface MemoryEntry {
 export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
     const [brains, setBrains] = useState(initialBrains);
     const [messages, setMessages] = useState<{ id: number, brain: string, text: string, time: string }[]>([]);
+    
+    // Conversations State
+    const [conversations, setConversations] = useState<any[]>([]);
+    const [activeConversation, setActiveConversation] = useState<any>(null);
+    const [isConversationDropdownOpen, setIsConversationDropdownOpen] = useState(false);
+    const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+
     const [activeTab, setActiveTab] = useState<'thoughts' | 'memory'>('thoughts');
     const [memories, setMemories] = useState<MemoryEntry[]>([]);
     const [expandedMemory, setExpandedMemory] = useState<string | null>(null);
@@ -364,11 +371,24 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         }
     };
 
-    const handleTaskSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const submitTaskInput = async () => {
+        if (isSubmitting || (!taskInput.trim() && attachedImages.length === 0)) return;
+
         const text = taskInput;
         setTaskInput('');
         await dispatchTask(text);
+    };
+
+    const handleTaskSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await submitTaskInput();
+    };
+
+    const handleTaskInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            void submitTaskInput();
+        }
     };
 
     const scrollToBottom = () => {
@@ -397,29 +417,61 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         }
     };
 
+    const switchConversation = async (conversationId: string) => {
+        setIsConversationDropdownOpen(false);
+        try {
+            const res = await axios.get(`/api/brain/conversations/${conversationId}/messages`);
+            const history = res.data.map((msg: any) => ({
+                id: msg.id,
+                brain: msg.brain,
+                text: msg.message,
+                time: new Date(msg.created_at).toLocaleTimeString([], { hour12: false })
+            }));
+            setMessages(history);
+            
+            const convo = conversations.find(c => c.id === conversationId);
+            if (convo) setActiveConversation(convo);
+
+            // Jump straight to bottom without animation to show latest
+            setTimeout(() => {
+                if (messagesEndRef.current) {
+                    messagesEndRef.current.scrollIntoView();
+                }
+            }, 100);
+        } catch (err) {
+            console.error("Failed to load conversation messages", err);
+        }
+    };
+
+    const createConversation = async () => {
+        setIsCreatingConversation(true);
+        try {
+            const res = await axios.post('/api/brain/conversations', { title: 'New chat' });
+            setConversations(prev => [res.data, ...prev]);
+            await switchConversation(res.data.id);
+        } catch (err) {
+            console.error("Failed to create conversation", err);
+        } finally {
+            setIsCreatingConversation(false);
+        }
+    };
+
     useEffect(() => {
-        // Fetch message history on load
-        const fetchHistory = async () => {
+        // Fetch conversations on load
+        const fetchConversations = async () => {
             try {
-                const res = await axios.get('/api/brain/history');
-                const history = res.data.map((msg: any) => ({
-                    id: msg.id,
-                    brain: msg.brain,
-                    text: msg.message,
-                    time: new Date(msg.created_at).toLocaleTimeString([], { hour12: false })
-                }));
-                setMessages(history);
-                // Jump straight to bottom without animation to show latest
-                setTimeout(() => {
-                    if (messagesEndRef.current) {
-                        messagesEndRef.current.scrollIntoView();
-                    }
-                }, 100);
+                const res = await axios.get('/api/brain/conversations');
+                setConversations(res.data);
+                
+                // Select first conversation (usually History or latest chat)
+                if (res.data.length > 0) {
+                    await switchConversation(res.data[0].id);
+                }
             } catch (err) {
-                console.error("Failed to load message history", err);
+                console.error("Failed to load conversations list", err);
             }
         };
-        fetchHistory();
+        fetchConversations();
 
         // Initialize Echo
         const echo = new Echo({
@@ -732,7 +784,46 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                     </button>
                                 )}
                             </div>
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsConversationDropdownOpen(!isConversationDropdownOpen)}
+                                        className={`flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider transition-opacity hover:opacity-80 ${isLightMode ? 'text-slate-500' : 'text-cyan-600'}`}
+                                    >
+                                        Chats ▾
+                                    </button>
+                                    {isConversationDropdownOpen && (
+                                        <div className={`absolute right-0 top-full mt-2 w-56 rounded border shadow-xl z-50 overflow-hidden ${isLightMode ? 'bg-white border-slate-200' : 'bg-[#060b10] border-cyan-900/60'}`}>
+                                            <div className="max-h-48 overflow-y-auto scrollbar-thin scrollbar-track-transparent">
+                                                {conversations.length === 0 ? (
+                                                    <div className="p-3 text-[10px] italic text-center opacity-50">No chats found</div>
+                                                ) : conversations.map(conv => (
+                                                    <button
+                                                        key={conv.id}
+                                                        onClick={() => switchConversation(conv.id)}
+                                                        className={`w-full text-left px-3 py-2.5 text-[10px] truncate border-b transition-colors ${
+                                                            isLightMode ? 'border-slate-100 hover:bg-slate-50' : 'border-cyan-900/30 hover:bg-cyan-950/40'
+                                                        } ${activeConversation?.id === conv.id ? (isLightMode ? 'bg-slate-100 font-bold' : 'bg-cyan-900/40 font-bold text-cyan-300') : (isLightMode ? 'text-slate-600' : 'text-cyan-600')}`}
+                                                    >
+                                                        {conv.title}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={createConversation}
+                                    disabled={isCreatingConversation}
+                                    title="New Chat"
+                                    className={`flex items-center justify-center w-5 h-5 rounded transition-all disabled:opacity-50 ${isLightMode ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-cyan-900/50 text-cyan-400 hover:bg-cyan-800'}`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                                        <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                                    </svg>
+                                </button>
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-1" title="Connected"></div>
+                            </div>
                         </div>
                         {/* Thought Stream Scroll Container */}
                         <div
@@ -845,30 +936,41 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                             );
                                         }
 
+                                        const isUser = msg.brain === 'USER';
                                         return (
-                                            <div key={msg.id} className={`text-xs leading-6 break-words p-3.5 rounded-lg border shadow-sm transition-colors duration-500 ${getBrainBgColor(msg.brain)}`}>
-                                                <div className="flex justify-between items-baseline mb-1">
-                                                    <span className={`font-bold tracking-wider ${getBrainColor(msg.brain)}`}>[{msg.brain}]</span>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`text-[9px] ${isLightMode ? 'text-slate-400' : 'text-cyan-800'}`}>{msg.time}</span>
-                                                    </div>
-                                                </div>
-                                                <div className={`font-sans tracking-normal flex items-start gap-2 ${isLightMode ? 'text-slate-700' : 'text-cyan-50'}`}>
-                                                    <div className="mt-0.5 shrink-0">
-                                                        {msg.text.startsWith('[DONE] ') ? (
-                                                            <svg className="w-4 h-4 text-green-400 drop-shadow-[0_0_5px_rgba(74,222,128,0.8)] animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                        ) : (
-                                                            <span>&gt;</span>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex-1 w-full overflow-hidden">
-                                                        {msg.brain === 'USER' ? parseMarkdownBold(cleanText, isLightMode) : <TypingMessage text={cleanText} isLightMode={isLightMode} />}
-
+                                            <div key={msg.id} className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
+                                                <div className={`max-w-[85%] text-xs leading-6 break-words p-3.5 border shadow-sm transition-colors duration-500 ${
+                                                    isUser
+                                                        ? (isLightMode ? 'bg-slate-800 text-white border-slate-900 rounded-2xl rounded-br-sm' : 'bg-cyan-900 text-cyan-50 border-cyan-700 rounded-2xl rounded-br-sm')
+                                                        : `${getBrainBgColor(msg.brain)} rounded-2xl rounded-bl-sm`
+                                                }`}>
+                                                    {!isUser && (
+                                                        <div className={`flex items-baseline gap-2 mb-2 pb-1 border-b ${isLightMode ? 'border-slate-200/50' : 'border-cyan-900/50'}`}>
+                                                            <span className={`font-bold tracking-wider ${getBrainColor(msg.brain)}`}>[{msg.brain}]</span>
+                                                            <span className={`text-[9px] ${isLightMode ? 'text-slate-400' : 'text-cyan-800'}`}>{msg.time}</span>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    <div className={`font-sans tracking-normal flex flex-col gap-2 ${isUser ? (isLightMode ? 'text-slate-100' : 'text-cyan-50') : (isLightMode ? 'text-slate-700' : 'text-cyan-50')}`}>
+                                                        <div className="flex-1 w-full overflow-hidden flex gap-2">
+                                                            {!isUser && (
+                                                                <div className="mt-0.5 shrink-0">
+                                                                    {msg.text.startsWith('[DONE] ') ? (
+                                                                        <svg className="w-4 h-4 text-green-400 drop-shadow-[0_0_5px_rgba(74,222,128,0.8)] animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <span className="opacity-50">&gt;</span>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            <div className="flex-1 min-w-0">
+                                                                {isUser ? parseMarkdownBold(cleanText, isLightMode) : <TypingMessage text={cleanText} isLightMode={isLightMode} />}
+                                                            </div>
+                                                        </div>
 
                                                         {imageList.length > 0 && (
-                                                            <div className="mt-2.5 flex flex-wrap gap-2">
+                                                            <div className="mt-1 flex flex-wrap gap-2">
                                                                 {imageList.map((imgUrl, imgIdx) => (
                                                                     <a key={imgIdx} href={imgUrl} target="_blank" rel="noreferrer" className="block shrink-0">
                                                                         <img
@@ -882,17 +984,19 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                         )}
 
                                                         {optionGroups.map((group, groupIndex) => (
-                                                            <div key={groupIndex} className="mt-3">
-                                                                {group.question && <p className={`mb-1.5 text-[10px] font-bold ${isLightMode ? 'text-slate-600' : 'text-cyan-200'}`}>{group.question}</p>}
+                                                            <div key={groupIndex} className="mt-2">
+                                                                {group.question && <p className={`mb-1.5 text-[10px] font-bold ${isUser ? (isLightMode ? 'text-slate-300' : 'text-cyan-200') : (isLightMode ? 'text-slate-600' : 'text-cyan-200')}`}>{group.question}</p>}
                                                                 <div className="flex flex-wrap gap-2">
                                                                     {group.options.map((opt, idx) => (
                                                                         <button
                                                                             key={idx}
                                                                             onClick={() => dispatchTask(group.question ? `${group.question}: ${opt}` : opt)}
                                                                             disabled={isSubmitting}
-                                                                            className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isLightMode
+                                                                            className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isUser 
+                                                                                ? (isLightMode ? 'bg-slate-700 border-slate-600 text-white hover:bg-slate-600' : 'bg-cyan-800 border-cyan-600 text-cyan-100 hover:bg-cyan-700')
+                                                                                : (isLightMode
                                                                                 ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 shadow-sm'
-                                                                                : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]'
+                                                                                : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]')
                                                                                 }`}
                                                                         >
                                                                             {opt}
@@ -903,13 +1007,19 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                         ))}
                                                         {approvalId && (
                                                             (approvals.find(approval => approval.id === approvalId)?.status ?? 'pending') === 'pending' ? (
-                                                                <div className="mt-3 flex flex-wrap gap-2">
+                                                                <div className="mt-2 flex flex-wrap gap-2">
                                                                     <button onClick={() => resolveApproval(approvalId, 'accept')} disabled={isSubmitting || resolvingApprovalIds.has(approvalId)} className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border disabled:opacity-50 ${isLightMode ? 'border-green-700 bg-green-100 text-green-900 hover:bg-green-200' : 'border-green-500/60 bg-green-950/40 text-green-300 hover:bg-green-900/70'}`}>Approve</button>
                                                                     <button onClick={() => resolveApproval(approvalId, 'decline')} disabled={isSubmitting || resolvingApprovalIds.has(approvalId)} className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded border disabled:opacity-50 ${isLightMode ? 'border-red-700 bg-red-100 text-red-900 hover:bg-red-200' : 'border-red-500/60 bg-red-950/40 text-red-300 hover:bg-red-900/70'}`}>Deny</button>
                                                                 </div>
-                                                            ) : <p className={`mt-3 text-[10px] uppercase tracking-wide ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>Approval {(approvals.find(approval => approval.id === approvalId)?.status ?? 'resolved')}</p>
+                                                            ) : <p className={`mt-2 text-[10px] uppercase tracking-wide ${isUser ? (isLightMode ? 'text-slate-300' : 'text-cyan-300') : (isLightMode ? 'text-slate-500' : 'text-cyan-700')}`}>Approval {(approvals.find(approval => approval.id === approvalId)?.status ?? 'resolved')}</p>
                                                         )}
                                                     </div>
+                                                    
+                                                    {isUser && (
+                                                        <div className="flex justify-end mt-1 pt-1 border-t border-white/10">
+                                                            <span className={`text-[9px] ${isLightMode ? 'text-slate-400' : 'text-cyan-600'}`}>{msg.time}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
@@ -1052,14 +1162,15 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                     </button>
 
                                     <div className="relative flex-1">
-                                        <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold ${isLightMode ? 'text-slate-400' : 'text-cyan-500'}`}>&gt;</span>
-                                        <input
-                                            type="text"
+                                        <span className={`absolute left-3 top-3 text-sm font-bold ${isLightMode ? 'text-slate-400' : 'text-cyan-500'}`}>&gt;</span>
+                                        <textarea
                                             value={taskInput}
                                             onChange={(e) => setTaskInput(e.target.value)}
+                                            onKeyDown={handleTaskInputKeyDown}
                                             placeholder={attachedImages.length > 0 ? "Enter instructions for attached image(s)..." : "Enter task or paste/drag image..."}
                                             disabled={isSubmitting}
-                                        className={`w-full border rounded-md py-2 pl-8 pr-4 text-xs focus:outline-none focus:ring-1 transition-all disabled:opacity-50 ${isLightMode ? 'bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] focus:border-cyan-600 focus:ring-cyan-500/30' : 'bg-cyan-950/30 border-cyan-800/50 text-cyan-300 placeholder:text-cyan-800/70 focus:border-cyan-400 focus:ring-cyan-400'}`}
+                                            rows={3}
+                                            className={`w-full min-h-20 max-h-48 resize-y border rounded-md py-2 pl-8 pr-4 text-xs leading-5 focus:outline-none focus:ring-1 transition-all disabled:opacity-50 ${isLightMode ? 'bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] focus:border-cyan-600 focus:ring-cyan-500/30' : 'bg-cyan-950/30 border-cyan-800/50 text-cyan-300 placeholder:text-cyan-800/70 focus:border-cyan-400 focus:ring-cyan-400'}`}
                                         />
                                     </div>
                                     {isTaskActive || isSubmitting ? (
@@ -1088,6 +1199,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                         </button>
                                     )}
                                 </div>
+                                <p className={`text-[10px] ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>Enter adds a new line. Ctrl/Cmd + Enter sends.</p>
                             </form>
                         </div>
                     </aside>

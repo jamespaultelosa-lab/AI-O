@@ -79,6 +79,11 @@ brains publish safe, deduplicated lifecycle progress messages while Codex works.
 These messages intentionally exclude raw reasoning, commands, arguments, tool
 output, and paths.
 
+After upgrading, run `php artisan migrate` before starting the application.
+The migration creates conversation records and moves existing Brain messages
+and tasks into a `History` conversation. New chats can then be created from the
+Thought Stream UI; no manual data migration is required.
+
 Brief greetings addressed to the team (for example, `how are you guys?`) are
 sent to all four brain threads. Mention `archi`, `security`, `senior dev`, or
 `junior` to select a specific lead brain.

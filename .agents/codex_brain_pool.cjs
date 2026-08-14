@@ -101,7 +101,36 @@ class CodexAppServer {
             windowsHide: true,
         });
         this.child.stdout.on('data', (chunk) => this.read(chunk));
-        this.child.stderr.on('data', (chunk) => process.stderr.write(`[CODEX APP SERVER] ${chunk}`));
+        this.child.stderr.on('data', (chunk) => {
+            const text = chunk.toString();
+            process.stderr.write(`[CODEX APP SERVER] ${text}`);
+            
+            if (text.includes('ERROR')) {
+                let friendlyError = "Encountered an internal error.";
+                
+                if (text.includes('failed to refresh available models')) {
+                    friendlyError = "Experiencing a delay while trying to connect to the AI model provider.";
+                } else if (text.includes('apply_patch verification failed')) {
+                    friendlyError = "Failed to edit a file because the text I was looking for wasn't there.";
+                } else if (text.includes('Exit code: 1') || text.includes('EmptyPipeElement')) {
+                    const outputMatch = text.match(/Output:\s*([\s\S]+?)(?=\n\[CODEX|\n$|$)/);
+                    if (outputMatch && outputMatch[1].trim()) {
+                        const outText = outputMatch[1].trim();
+                        friendlyError = `Command failed: ${outText.length > 80 ? outText.substring(0, 80) + '...' : outText}`;
+                    } else {
+                        friendlyError = "The last terminal command I ran failed.";
+                    }
+                } else {
+                    const match = text.match(/ERROR (.+)/);
+                    friendlyError = `System Error: ${match ? match[1].substring(0, 80) : 'Internal failure'}`;
+                }
+
+                const activeTaskId = currentTaskActivities.taskId || (this.turns.size > 0 ? this.turns.values().next().value.taskId : null);
+                if (shouldBroadcastActivity({ taskId: activeTaskId, activityBroadcasted: false }, friendlyError)) {
+                    publishActivity('SYSTEM', friendlyError, activeTaskId);
+                }
+            }
+        });
         this.child.on('error', (error) => this.fail(error));
         this.child.on('exit', (code, signal) => this.fail(new Error(`Codex app server exited (${signal || code})`)));
         this.ready = this.request('initialize', {
@@ -136,7 +165,7 @@ class CodexAppServer {
         const turn = this.turns.get(message.params?.turnId);
         if (message.method === 'item/started' && turn) {
             const activity = activityDescription(message.params?.item);
-            if (activity && shouldBroadcastActivity(turn)) {
+            if (activity && shouldBroadcastActivity(turn, activity)) {
                 publishActivity(turn.brain, activity, turn.taskId);
             }
             return;
@@ -334,23 +363,36 @@ function safeCommandOperation(command) {
 function activityDescription(item) {
     switch (item?.type) {
         case 'reasoning':
-            return 'Reviewing the task approach...';
+            return 'Thinking...';
         case 'commandExecution':
-            return 'Running a workspace command...';
+            const cmd = item.command || 'a workspace command';
+            return `Running: ${cmd.length > 80 ? cmd.substring(0, 80) + '...' : cmd}`;
         case 'fileChange':
-            return 'Preparing workspace changes...';
+            const file = item.path || item.filePath || 'workspace files';
+            return `Editing: ${file}`;
         case 'mcpToolCall':
-            return 'Using an integrated tool...';
+            const tool = item.name || item.tool || 'an integrated tool';
+            return `Using tool: ${tool}`;
         case 'webSearch':
-            return 'Checking referenced information...';
+            return `Searching: ${item.query || 'the web'}`;
         default:
             return null;
     }
 }
 
-function shouldBroadcastActivity(turn) {
-    if (turn.activityBroadcasted) return false;
-    turn.activityBroadcasted = true;
+let currentTaskActivities = { taskId: null, activities: new Set() };
+
+function shouldBroadcastActivity(turn, activity) {
+    if (!turn.taskId) {
+        if (turn.activityBroadcasted) return false;
+        turn.activityBroadcasted = true;
+        return true;
+    }
+    if (currentTaskActivities.taskId !== turn.taskId) {
+        currentTaskActivities = { taskId: turn.taskId, activities: new Set() };
+    }
+    if (currentTaskActivities.activities.has(activity)) return false;
+    currentTaskActivities.activities.add(activity);
     return true;
 }
 

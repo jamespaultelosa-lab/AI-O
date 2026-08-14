@@ -59,7 +59,9 @@ class TaskPromptTransportTest extends TestCase
         $this->assertDatabaseMissing('brain_messages', ['brain' => 'SYSTEM']);
 
         $payload = json_decode(file_get_contents($this->queueFile), true)[0];
-        $this->assertSame(['display_task', 'transport_task', 'images', 'assigned_model', 'timestamp'], array_keys($payload));
+        $this->assertSame(['task_id', 'conversation_id', 'display_task', 'transport_task', 'images', 'assigned_model', 'timestamp'], array_keys($payload));
+        $this->assertIsString($payload['task_id']);
+        $this->assertIsString($payload['conversation_id']);
         $this->assertSame($displayTask, $payload['display_task']);
         $this->assertSame($transportTask, $payload['transport_task']);
         $this->assertStringNotContainsString('original-only', $payload['transport_task']);
@@ -83,14 +85,12 @@ class TaskPromptTransportTest extends TestCase
         $this->assertSame(['https://example.test/screenshot.png'], $payload['images']);
     }
 
-    public function test_missing_either_representation_has_no_persistence_ipc_or_broadcast_side_effects(): void
+    public function test_task_is_required_but_legacy_clients_can_omit_display_text(): void
     {
         Event::fake();
 
         foreach ([
-            ['task' => 'compact only'],
             ['display_task' => 'display only'],
-            ['display_task' => '', 'task' => 'compact'],
             ['display_task' => 'display', 'task' => ''],
         ] as $payload) {
             $this->postJson('/api/brain/dispatch', $payload)->assertUnprocessable();
@@ -99,6 +99,11 @@ class TaskPromptTransportTest extends TestCase
         $this->assertSame([], json_decode(file_get_contents($this->queueFile), true));
         $this->assertFileDoesNotExist($this->pendingFile);
         $this->assertSame(0, BrainMessage::count());
-        Event::assertNothingDispatched();
+        Event::assertNotDispatched(BrainMessageBroadcast::class);
+
+        $this->postJson('/api/brain/dispatch', ['task' => 'compact only'])
+            ->assertOk()
+            ->assertJsonPath('task', 'compact only');
+        $this->assertDatabaseHas('brain_messages', ['brain' => 'USER', 'message' => 'compact only']);
     }
 }

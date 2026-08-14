@@ -197,6 +197,31 @@ function resetSelectedProject() {
     selectedProject = null;
 }
 
+function loadObsidianSkills(task) {
+    const skillsDir = path.resolve(AIO_PROJECT_ROOT, 'Docs', 'Skills');
+    if (!fs.existsSync(skillsDir)) return '';
+    
+    let injectedSkills = '';
+    const files = fs.readdirSync(skillsDir).filter(f => f.endsWith('.md'));
+    const taskLower = task.toLowerCase();
+    
+    for (const file of files) {
+        const content = fs.readFileSync(path.join(skillsDir, file), 'utf8');
+        // Simple keyword match (checking if any word in the title or tags matches the task)
+        const match = content.match(/tags:\s*\[(.*?)\]/);
+        const tags = match ? match[1].split(',').map(t => t.trim().toLowerCase()) : [];
+        const titleWords = file.toLowerCase().replace('.md', '').split('_');
+        
+        const isRelevant = tags.some(tag => taskLower.includes(tag)) || titleWords.some(word => taskLower.includes(word));
+        
+        if (isRelevant) {
+            injectedSkills += `\n\n--- SKILL FILE: ${file} ---\n${content}\n--- END SKILL ---`;
+        }
+    }
+    
+    return injectedSkills ? `\n\n[OBSIDIAN SKILLS INJECTED] Use the following learned skills for this task:${injectedSkills}` : '';
+}
+
 function buildIdentity(brain, mode, task, projectRoot = AIO_PROJECT_ROOT, hasSelectedProject = false, durableContext = '') {
     const roles = {
         Architect: 'You reason about system boundaries, architecture, and data design.',
@@ -216,8 +241,9 @@ function buildIdentity(brain, mode, task, projectRoot = AIO_PROJECT_ROOT, hasSel
         ? 'Treat a selected follow-up action as authorized for that project; do not ask which repository to use again.'
         : 'If the task requires a repository-specific action, you MUST ask the user which repository to use by using the [OPTIONS: AI-O :: FAIS Payroll SRS :: Both] format. Do not answer this yourself.';
     const optionInstruction = 'When a material requirement is missing, ask the user one concise clarifying question in this exact format: [QUESTION: concise question][OPTIONS: Option A :: Option B]. Never assume a missing requirement. do not emit options for straightforward tasks.';
+    const skillsContext = loadObsidianSkills(task);
 
-    return `You are ${brain}, an FAIS Brains specialist. ${roles[brain]} Act as an independent collaborator, not a yes-person: state a clear recommendation, name material assumptions and trade-offs, and respectfully challenge a weak or risky premise. Ask one focused question only when it genuinely blocks a sound next step; otherwise make the best bounded recommendation. ${optionInstruction} ${selectionInstruction} ${durableContext}\nProject root: ${projectRoot}. Task: ${task}\nFor substantive completed work only, and only when you can name concrete evidence, append one private line exactly in this form: [[VAULT_LEARNING: Observation: ... | Evidence: file, test, or incident | Rule: reusable practice]]. Never include credentials, tokens, personal data, or unverified claims.`;
+    return `You are ${brain}, an FAIS Brains specialist. ${roles[brain]} Act as an independent collaborator, not a yes-person: state a clear recommendation, name material assumptions and trade-offs, and respectfully challenge a weak or risky premise. Ask one focused question only when it genuinely blocks a sound next step; otherwise make the best bounded recommendation. ${optionInstruction} ${selectionInstruction} ${durableContext}\nProject root: ${projectRoot}. Task: ${task}${skillsContext}\nFor substantive completed work only, and only when you can name concrete evidence, append one private line exactly in this form: [[VAULT_LEARNING: Observation: ... | Evidence: file, test, or incident | Rule: reusable practice]]. Never include credentials, tokens, personal data, or unverified claims.`;
 }
 
 function sendWebhook(endpoint, payload) {
@@ -290,7 +316,8 @@ async function orchestrate(taskData, webhook = sendWebhook, runner = queryBrain)
     // deliberately emits only opaque task IDs and safe phase labels here.
     await reportTaskLifecycle(webhook, taskId, 'assigned', 'Assigned', route.lead);
     await reportTaskLifecycle(webhook, taskId, 'running', 'Preparing');
-    await webhook('brain-message', { brain: 'SYSTEM', message: '[AUTONOMY] Team focus is retained; independent review and bounded follow-up tracking are active.' });
+    const messagePayload = (brain, message) => ({ brain, message, task_id: taskId });
+    await webhook('brain-message', messagePayload('SYSTEM', '[AUTONOMY] Team focus is retained; independent review and bounded follow-up tracking are active.'));
 
     if (route.tier === 'casual_group') {
         const messages = [];
@@ -300,7 +327,7 @@ async function orchestrate(taskData, webhook = sendWebhook, runner = queryBrain)
             await webhook('brain-status', { brain, status: 'thinking' });
             try {
                 const message = await runBrain(brain, buildIdentity(brain, 'casual', task, projectRoot, hasSelectedProject, autonomyContext(brain)));
-                await webhook('brain-message', { brain, message });
+                await webhook('brain-message', messagePayload(brain, message));
                 await webhook('brain-status', { brain, status: 'idle' });
                 messages.push({ brain, message });
             } catch (error) {
@@ -325,7 +352,7 @@ async function orchestrate(taskData, webhook = sendWebhook, runner = queryBrain)
     }
 
     const collaboration = collaborationMessage(route.lead, route.consultants);
-    if (collaboration) await webhook('brain-message', { brain: 'SYSTEM', message: collaboration });
+    if (collaboration) await webhook('brain-message', messagePayload('SYSTEM', collaboration));
 
     await Promise.all(route.consultants.map(async (consultant) => {
         await reportTaskLifecycle(webhook, taskId, 'running', 'Consulting', consultant);
@@ -336,7 +363,7 @@ async function orchestrate(taskData, webhook = sendWebhook, runner = queryBrain)
             const finding = stripLearningDirective(rawFinding);
             consultations.push({ brain: consultant, finding });
             // This is a concise, user-facing finding—not the agent's private reasoning.
-            await webhook('brain-message', { brain: consultant, message: `[Consultation finding] ${finding}` });
+            await webhook('brain-message', messagePayload(consultant, `[Consultation finding] ${finding}`));
             await webhook('brain-status', { brain: consultant, status: 'standby' });
         } catch (error) {
             console.error(`[BRAIN ORCHESTRATOR] ${consultant} failed: ${error.message}`);
@@ -355,7 +382,7 @@ async function orchestrate(taskData, webhook = sendWebhook, runner = queryBrain)
         const rawMessage = await runBrain(route.lead, `${buildIdentity(route.lead, 'actionable', task, projectRoot, hasSelectedProject, durableContext)}${consultationContext}\nBefore responding, privately check whether the recommendation remains safe, evidence-based, and aligned with the durable focus. Return the single user-facing response.`);
         captureLearning(route.lead, rawMessage);
         const message = stripLearningDirective(rawMessage);
-        await webhook('brain-message', { brain: route.lead, message });
+        await webhook('brain-message', messagePayload(route.lead, message));
         await webhook('brain-status', { brain: route.lead, status: 'idle' });
         await reportTaskLifecycle(webhook, taskId, 'completed', 'Completed', route.lead, 'Task response delivered.');
         activeTask = null;

@@ -68,3 +68,4 @@ When a message arrives from the watcher, you (the AI agent) must first discern w
 21. **Completion Documentation:** After every successful task, update the relevant existing project documentation with the change, verification performed, and any material operational caveat. Keep the record concise and avoid duplicate documents.
 
 22. **Architecture and Startup Documentation:** Whenever a change affects runtime architecture, process ownership, startup, configuration, or operational paths, update both `ARCHITECTURE.md` and `INSTALLATION.md` before declaring the task complete.
+

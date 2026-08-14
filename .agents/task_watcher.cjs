@@ -51,6 +51,9 @@ function normalizeTaskPayload(payload) {
         task_id: typeof payload.task_id === 'string' && payload.task_id.trim().length > 0
             ? payload.task_id.trim()
             : null,
+        conversation_id: typeof payload.conversation_id === 'string' && payload.conversation_id.trim().length > 0
+            ? payload.conversation_id.trim()
+            : null,
         display_task: payload.display_task,
         transport_task: payload.transport_task,
         images: Array.isArray(payload.images) ? payload.images.filter((image) => typeof image === 'string') : [],

@@ -14,7 +14,7 @@ function sendWebhook(type, data) {
         const req = http.request({
             hostname: 'localhost',
             port: 8001,
-            path: `/webhook/${type}`,
+            path: `/api/webhook/${type}`,
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

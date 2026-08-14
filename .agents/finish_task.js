@@ -6,7 +6,7 @@ function sendWebhook(endpoint, data) {
         const options = {
             hostname: 'localhost',
             port: 8001,
-            path: '/webhook/' + endpoint,
+            path: '/api/webhook/' + endpoint,
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

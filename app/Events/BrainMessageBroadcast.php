@@ -13,17 +13,22 @@ class BrainMessageBroadcast implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public string $brainName;
+
     public string $message;
+
     public string $timestamp;
+
+    public ?string $conversationId;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(string $brainName, string $message)
+    public function __construct(string $brainName, string $message, ?string $conversationId = null)
     {
         $this->brainName = $brainName;
         $this->message = $message;
         $this->timestamp = now()->toIso8601String();
+        $this->conversationId = $conversationId;
     }
 
     /**

@@ -93,14 +93,18 @@ class TaskDispatchDiscernmentTest extends TestCase
         $this->assertIsArray($queue);
         $this->assertCount(1, $queue);
         $this->assertSame([
-            'task',
-            'raw_task',
+            'task_id',
+            'conversation_id',
+            'display_task',
+            'transport_task',
             'images',
             'assigned_model',
             'timestamp',
         ], array_keys($queue[0]));
-        $this->assertSame('make a new button', $queue[0]['task']);
-        $this->assertSame('make a new button', $queue[0]['raw_task']);
+        $this->assertIsString($queue[0]['task_id']);
+        $this->assertIsString($queue[0]['conversation_id']);
+        $this->assertSame('make a new button', $queue[0]['display_task']);
+        $this->assertSame('make a new button', $queue[0]['transport_task']);
         $this->assertSame([], $queue[0]['images']);
         $this->assertNotEmpty($queue[0]['assigned_model']);
         $this->assertNotFalse(\DateTimeImmutable::createFromFormat(DATE_ATOM, $queue[0]['timestamp']));
@@ -138,6 +142,7 @@ class TaskDispatchDiscernmentTest extends TestCase
     public function test_both_dispatch_routes_return_casual_mode_without_ipc_side_effects(): void
     {
         Event::fake();
+        $this->withoutMiddleware();
 
         foreach (['/api/brain/dispatch', '/dispatch-task'] as $route) {
             $response = $this->postJson($route, ['task' => 'HELLO!']);
@@ -159,6 +164,7 @@ class TaskDispatchDiscernmentTest extends TestCase
     public function test_both_dispatch_routes_return_actionable_mode_and_queue_payload(): void
     {
         Event::fake();
+        $this->withoutMiddleware();
 
         foreach (['/api/brain/dispatch', '/dispatch-task'] as $route) {
             $response = $this->postJson($route, ['task' => 'make a new button']);
@@ -172,8 +178,8 @@ class TaskDispatchDiscernmentTest extends TestCase
 
             $queue = json_decode(file_get_contents($this->queueFile), true);
             $this->assertCount(1, $queue);
-            $this->assertSame('make a new button', $queue[0]['task']);
-            $this->assertSame('make a new button', $queue[0]['raw_task']);
+            $this->assertSame('make a new button', $queue[0]['display_task']);
+            $this->assertSame('make a new button', $queue[0]['transport_task']);
             $this->assertSame([], $queue[0]['images']);
             $this->assertNotEmpty($queue[0]['assigned_model']);
             $this->assertNotFalse(\DateTimeImmutable::createFromFormat(DATE_ATOM, $queue[0]['timestamp']));
@@ -197,7 +203,7 @@ class TaskDispatchDiscernmentTest extends TestCase
         $response->assertOk()->assertJsonPath('mode', 'actionable');
         $queue = json_decode(file_get_contents($this->queueFile), true);
         $this->assertCount(1, $queue);
-        $this->assertSame('hello', $queue[0]['raw_task']);
+        $this->assertSame('hello', $queue[0]['transport_task']);
         $this->assertCount(1, $queue[0]['images']);
         $this->assertFileExists($this->testBasePath.DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'brain_attachments');
         $this->assertFileExists($this->pendingFile);

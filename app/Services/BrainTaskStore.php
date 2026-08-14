@@ -22,10 +22,11 @@ class BrainTaskStore
         BrainTask::APPROVAL_REQUIRED => [BrainTask::RUNNING, BrainTask::FAILED, BrainTask::CANCELLED],
     ];
 
-    public function create(string $summary, ?string $model, int $queuePosition): BrainTask
+    public function create(string $summary, ?string $model, int $queuePosition, ?string $conversationId = null): BrainTask
     {
-        return DB::transaction(function () use ($summary, $model, $queuePosition) {
+        return DB::transaction(function () use ($summary, $model, $queuePosition, $conversationId) {
             $task = BrainTask::create([
+                'brain_conversation_id' => $conversationId,
                 'display_summary' => $this->safeSummary($summary, 240),
                 'assigned_model' => $this->safeLabel($model),
                 'status' => BrainTask::QUEUED,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\BrainMessageBroadcast;
+use App\Models\BrainTask;
 use App\Services\BrainMessageStore;
 use App\Services\BrainTaskStore;
 use App\Services\TaskIntentDiscernment;
@@ -62,27 +63,53 @@ class TaskDispatcherController extends Controller
     public function dispatch(Request $request, TaskIntentDiscernment $intentDiscernment, BrainMessageStore $messageStore, BrainTaskStore $taskStore)
     {
         $validated = $request->validate([
-            'display_task' => ['required', 'string', 'min:1', 'max:'.self::DISPLAY_TASK_MAX_LENGTH],
+            // Older API clients send one `task` field. Keep that contract while
+            // allowing newer clients to provide a display-safe task separately.
+            'display_task' => ['nullable', 'string', 'min:1', 'max:'.self::DISPLAY_TASK_MAX_LENGTH],
             'task' => ['required', 'string', 'min:1', 'max:'.self::TRANSPORT_TASK_MAX_LENGTH],
             'images' => ['sometimes', 'array', 'max:'.self::MAX_IMAGES],
+            'conversation_id' => ['nullable', 'uuid', 'exists:brain_conversations,id'],
         ]);
 
-        $displayTask = $validated['display_task'];
         $transportTask = $validated['task'];
+        $displayTask = $validated['display_task'] ?? $transportTask;
         $rawImages = $validated['images'] ?? [];
+        $conversationId = $validated['conversation_id'] ?? $messageStore->historyConversation()->id;
         $this->validateImageInputs($rawImages);
 
         $intent = $intentDiscernment->decide($displayTask);
         $isGroupAddress = preg_match('/\b(guys|everyone|team|bois|brains|all)\b/ui', $displayTask) === 1;
         if ($intent === TaskIntentDiscernment::CASUAL && ! $isGroupAddress && count($rawImages) === 0) {
-            $messageStore->record('USER', $displayTask);
+            $messageStore->record('USER', $displayTask, $conversationId);
 
             $casualResponse = 'Hello! How can I help?';
-            $messageStore->record('Architect', $casualResponse);
-            event(new BrainMessageBroadcast('Architect', $casualResponse));
+            $responseMessage = $messageStore->record('Architect', $casualResponse, $conversationId);
+            event(new BrainMessageBroadcast('Architect', $casualResponse, $responseMessage?->brain_conversation_id ?? $conversationId));
 
             return response()->json([
                 'status' => 'success',
+                'mode' => TaskIntentDiscernment::CASUAL,
+                'task' => $displayTask,
+                'queue_position' => 0,
+            ]);
+        }
+
+        if (trim(strtolower($displayTask)) === '/evolve-skills') {
+            $messageStore->record('USER', $displayTask, $conversationId);
+            $responseMessage = $messageStore->record('Senior_Dev', 'Initiating FAIS Brains Manual Evolution sequence...', $conversationId);
+            event(new BrainMessageBroadcast('Senior_Dev', 'Initiating FAIS Brains Manual Evolution sequence...', $responseMessage?->brain_conversation_id ?? $conversationId));
+
+            // Launch the script in the background
+            $scriptPath = base_path('.agents/evolve_skills.cjs');
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                pclose(popen("start /B node {$scriptPath} > NUL 2>&1", "r"));
+            } else {
+                exec("node {$scriptPath} > /dev/null 2>&1 &");
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Evolution sequence started',
                 'mode' => TaskIntentDiscernment::CASUAL,
                 'task' => $displayTask,
                 'queue_position' => 0,
@@ -131,9 +158,10 @@ class TaskDispatcherController extends Controller
         }
 
         $queuePosition = count($queue) + 1;
-        $brainTask = $taskStore->create($displayTask, $assignedModel, $queuePosition);
+        $brainTask = $taskStore->create($displayTask, $assignedModel, $queuePosition, $conversationId);
         $newTaskPayload = [
             'task_id' => $brainTask->id,
+            'conversation_id' => $conversationId,
             'display_task' => $displayTask,
             'transport_task' => $transportTask,
             'images' => $images,
@@ -150,7 +178,7 @@ class TaskDispatcherController extends Controller
         }
 
         // Save USER message to database
-        $messageStore->record('USER', $displayTask);
+        $messageStore->record('USER', $displayTask, $conversationId);
 
         $queueCount = count($queue);
 
@@ -241,18 +269,18 @@ class TaskDispatcherController extends Controller
         }
 
         $tasks = $requestedTaskId !== null
-            ? \App\Models\BrainTask::query()->whereKey($requestedTaskId)->get()
-            : \App\Models\BrainTask::query()->whereIn('status', [
-                \App\Models\BrainTask::QUEUED,
-                \App\Models\BrainTask::ASSIGNED,
-                \App\Models\BrainTask::RUNNING,
-                \App\Models\BrainTask::APPROVAL_REQUIRED,
+            ? BrainTask::query()->whereKey($requestedTaskId)->get()
+            : BrainTask::query()->whereIn('status', [
+                BrainTask::QUEUED,
+                BrainTask::ASSIGNED,
+                BrainTask::RUNNING,
+                BrainTask::APPROVAL_REQUIRED,
             ])->get();
         if ($requestedTaskId !== null && $tasks->isEmpty()) {
             abort(404);
         }
 
-        $activeTaskIds = $tasks->filter(fn ($task) => in_array($task->status, [\App\Models\BrainTask::ASSIGNED, \App\Models\BrainTask::RUNNING, \App\Models\BrainTask::APPROVAL_REQUIRED], true))->pluck('id')->all();
+        $activeTaskIds = $tasks->filter(fn ($task) => in_array($task->status, [BrainTask::ASSIGNED, BrainTask::RUNNING, BrainTask::APPROVAL_REQUIRED], true))->pluck('id')->all();
         foreach ($tasks as $task) {
             $taskStore->cancel($task);
         }
@@ -284,10 +312,15 @@ class TaskDispatcherController extends Controller
             @unlink($lockFile);
         }
 
-        // Log only a safe cancellation outcome, never task transport text.
+        // Log only a safe cancellation outcome, never task transport text. A
+        // cancellation may cover tasks from more than one chat, so publish one
+        // scoped message per affected conversation instead of leaking it into
+        // the default history stream.
         $abortMsg = '[Senior_Dev]: Task cancellation recorded.';
-        $messageStore->record('Senior_Dev', $abortMsg);
-        event(new BrainMessageBroadcast('Senior_Dev', $abortMsg));
+        $tasks->pluck('brain_conversation_id')->filter()->unique()->each(function (string $conversationId) use ($messageStore, $abortMsg): void {
+            $record = $messageStore->record('Senior_Dev', $abortMsg, $conversationId);
+            event(new BrainMessageBroadcast('Senior_Dev', $abortMsg, $record?->brain_conversation_id ?? $conversationId));
+        });
 
         return response()->json([
             'status' => 'success',

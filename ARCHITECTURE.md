@@ -24,6 +24,15 @@ every Codex prompt and decision follow-up uses only `transport_task` plus the
 attachment metadata. The full display text never enters watcher logs, webhook
 payloads, error output, previous execution context, or model prompts.
 
+### Conversation History
+
+`brain_conversations` owns the Thought Stream's chat boundaries. Existing
+messages and tasks are placed in the permanent `History` conversation during
+migration; newly created chats receive an ID that travels with dispatch IPC,
+task records, webhook replies, and approval notifications. The Jarvis UI loads
+and displays only the selected conversation, while the shared broadcast channel
+includes that conversation ID so inactive chats do not pollute the active view.
+
 Task submission does not create a `SYSTEM` acknowledgement. While Codex is
 working, its lifecycle items publish deduplicated, safe phase updates from the
 active brain (for example, reviewing, running a command, or preparing changes).
