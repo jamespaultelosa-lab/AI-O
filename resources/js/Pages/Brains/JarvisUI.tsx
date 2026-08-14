@@ -40,6 +40,15 @@ interface ApprovalObservation {
     requestingBrain: string;
 }
 
+interface Conversation {
+    id: string;
+    title: string;
+    is_history: boolean;
+    messages_count?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
 const ACTIVE_TASK_STATUSES = new Set(['queued', 'assigned', 'running', 'approval_required']);
 const RETRY_ELIGIBLE_STATUSES = new Set(['failed', 'cancelled']);
 
@@ -173,12 +182,15 @@ interface MemoryEntry {
 export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
     const [brains, setBrains] = useState(initialBrains);
     const [messages, setMessages] = useState<{ id: number, brain: string, text: string, time: string }[]>([]);
-    
+
     // Conversations State
-    const [conversations, setConversations] = useState<any[]>([]);
-    const [activeConversation, setActiveConversation] = useState<any>(null);
+    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
     const [isConversationDropdownOpen, setIsConversationDropdownOpen] = useState(false);
     const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+    const conversationDisclosureRef = useRef<HTMLButtonElement>(null);
+    const conversationControlRef = useRef<HTMLDivElement>(null);
+    const conversationOptionRefs = useRef(new Map<string, HTMLButtonElement>());
 
     const [activeTab, setActiveTab] = useState<'thoughts' | 'memory'>('thoughts');
     const [memories, setMemories] = useState<MemoryEntry[]>([]);
@@ -417,10 +429,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         }
     };
 
-    const switchConversation = async (conversationId: string) => {
+    const switchConversation = async (conversation: Conversation) => {
         setIsConversationDropdownOpen(false);
         try {
-            const res = await axios.get(`/api/brain/conversations/${conversationId}/messages`);
+            const res = await axios.get(`/api/brain/conversations/${conversation.id}/messages`);
             const history = res.data.map((msg: any) => ({
                 id: msg.id,
                 brain: msg.brain,
@@ -428,9 +440,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                 time: new Date(msg.created_at).toLocaleTimeString([], { hour12: false })
             }));
             setMessages(history);
-            
-            const convo = conversations.find(c => c.id === conversationId);
-            if (convo) setActiveConversation(convo);
+            setActiveConversation(conversation);
 
             // Jump straight to bottom without animation to show latest
             setTimeout(() => {
@@ -447,8 +457,9 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         setIsCreatingConversation(true);
         try {
             const res = await axios.post('/api/brain/conversations', { title: 'New chat' });
-            setConversations(prev => [res.data, ...prev]);
-            await switchConversation(res.data.id);
+            const conversation = res.data as Conversation;
+            setConversations(prev => [conversation, ...prev]);
+            await switchConversation(conversation);
         } catch (err) {
             console.error("Failed to create conversation", err);
         } finally {
@@ -460,12 +471,12 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         // Fetch conversations on load
         const fetchConversations = async () => {
             try {
-                const res = await axios.get('/api/brain/conversations');
+                const res = await axios.get<Conversation[]>('/api/brain/conversations');
                 setConversations(res.data);
-                
+
                 // Select first conversation (usually History or latest chat)
                 if (res.data.length > 0) {
-                    await switchConversation(res.data[0].id);
+                    await switchConversation(res.data[0]);
                 }
             } catch (err) {
                 console.error("Failed to load conversations list", err);
@@ -546,6 +557,35 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
             echo.leave('brains.memory');
         };
     }, []);
+
+    useEffect(() => {
+        if (!isConversationDropdownOpen) return;
+
+        const handlePointerDown = (event: MouseEvent) => {
+            if (!conversationControlRef.current?.contains(event.target as Node)) {
+                setIsConversationDropdownOpen(false);
+            }
+        };
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                setIsConversationDropdownOpen(false);
+                conversationDisclosureRef.current?.focus();
+            }
+        };
+
+        document.addEventListener('mousedown', handlePointerDown);
+        document.addEventListener('keydown', handleKeyDown);
+        const focusTarget = activeConversation
+            ? conversationOptionRefs.current.get(activeConversation.id)
+            : conversationOptionRefs.current.values().next().value as HTMLButtonElement | undefined;
+        focusTarget?.focus();
+
+        return () => {
+            document.removeEventListener('mousedown', handlePointerDown);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isConversationDropdownOpen, activeConversation]);
 
     const [queueCount, setQueueCount] = useState<number>(0);
 
@@ -699,7 +739,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                         <div className={`absolute left-5 top-4 sm:left-8 sm:top-6 z-20 ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>
                             <p className="text-[10px] font-bold uppercase tracking-[0.22em]">Orchestration map</p>
                             <p className={`mt-1 text-[11px] tracking-wide ${isLightMode ? 'text-slate-500' : 'text-cyan-800'}`}>
-                                {Object.keys(brains).length} specialist agents <span aria-hidden="true">·</span> {isTaskActive ? 'activity in progress' : 'standing by'}
+                                {Object.keys(brains).length} specialist agents <span aria-hidden="true">Ã‚Â·</span> {isTaskActive ? 'activity in progress' : 'standing by'}
                             </p>
                         </div>
                         <div className={`grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-8 sm:gap-y-10 lg:gap-x-12 lg:gap-y-12 w-full max-w-3xl justify-items-center items-center my-auto rounded-[2rem] ${isLightMode ? 'border border-slate-200/90 bg-white/72 shadow-[0_24px_64px_rgba(15,23,42,0.10)]' : ''}`}>
@@ -748,84 +788,55 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                             <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${isLightMode ? 'bg-slate-400' : 'bg-cyan-700'}`}></div>
                         </div>
 
-                        <div className={`p-2 border-b flex justify-between items-center transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-100/85' : 'border-cyan-900/50 bg-cyan-950/20'}`}>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setActiveTab('thoughts')}
-                                    className={`px-3 py-1 text-[11px] font-bold tracking-wider rounded uppercase transition-all ${activeTab === 'thoughts'
-                                        ? (isLightMode ? 'bg-white text-slate-900 shadow-[0_2px_8px_rgba(15,23,42,0.08)] ring-1 ring-slate-200' : 'bg-cyan-950 border border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]')
-                                        : (isLightMode ? 'text-slate-500 hover:text-slate-800 hover:bg-white/70' : 'text-cyan-700 hover:text-cyan-400')
-                                        }`}
-                                >
-                                    Thought Stream
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('memory')}
-                                    className={`px-3 py-1 text-[11px] font-bold tracking-wider rounded uppercase transition-all flex items-center gap-1.5 ${activeTab === 'memory'
-                                        ? (isLightMode ? 'bg-white text-slate-900 shadow-[0_2px_8px_rgba(15,23,42,0.08)] ring-1 ring-slate-200' : 'bg-purple-950 border border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.3)]')
-                                        : (isLightMode ? 'text-slate-500 hover:text-slate-800 hover:bg-white/70' : 'text-purple-700 hover:text-purple-400')
-                                        }`}
-                                >
-                                    <span>Memory Vault</span>
-                                    {memories.length > 0 && (
-                                        <span className="px-1.5 py-0.2 text-[9px] rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                                            {memories.length}
-                                        </span>
-                                    )}
-                                </button>
-
-                                {activeTab === 'memory' && memories.length > 0 && (
-                                    <button
-                                        onClick={clearMemories}
-                                        className="text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-all ml-1"
-                                        title="Clear Memory Vault UI View"
-                                    >
-                                        Clear View
+                        <div className={`border-b p-3 transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-100/85' : 'border-cyan-900/50 bg-cyan-950/20'}`}>
+                            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                                <div className={`flex p-1 rounded-lg items-center ${isLightMode ? 'bg-slate-200/50' : 'bg-black/40 shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)] border border-cyan-900/30'}`} aria-label="Panel selection">
+                                    <button type="button" onClick={() => setActiveTab('thoughts')} aria-pressed={activeTab === 'thoughts'} className={`flex items-center min-h-8 rounded-md px-3.5 py-1 text-[10px] font-bold tracking-wider uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 active:scale-[0.98] ${activeTab === 'thoughts' ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50' : 'bg-cyan-900/40 text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] border border-cyan-700/50') : (isLightMode ? 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent' : 'text-cyan-700 hover:text-cyan-300 hover:bg-white/5 border border-transparent')}`}>
+                                        Thought Stream
                                     </button>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setIsConversationDropdownOpen(!isConversationDropdownOpen)}
-                                        className={`flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider transition-opacity hover:opacity-80 ${isLightMode ? 'text-slate-500' : 'text-cyan-600'}`}
-                                    >
-                                        Chats ▾
+                                    <button type="button" onClick={() => setActiveTab('memory')} aria-pressed={activeTab === 'memory'} className={`flex items-center min-h-8 gap-1.5 rounded-md px-3.5 py-1 text-[10px] font-bold tracking-wider uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-[0.98] ${activeTab === 'memory' ? (isLightMode ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50' : 'bg-purple-900/40 text-purple-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] border border-purple-700/50') : (isLightMode ? 'text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent' : 'text-purple-700 hover:text-purple-300 hover:bg-white/5 border border-transparent')}`}>
+                                        <span>Memory Vault</span>
+                                        {memories.length > 0 && <span className={`flex items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] ${activeTab === 'memory' ? (isLightMode ? 'bg-slate-100 text-slate-600' : 'bg-purple-950 border border-purple-500/30 text-purple-200') : (isLightMode ? 'bg-slate-200 text-slate-500' : 'bg-purple-900/30 text-purple-400')}`}>{memories.length}</span>}
                                     </button>
-                                    {isConversationDropdownOpen && (
-                                        <div className={`absolute right-0 top-full mt-2 w-56 rounded border shadow-xl z-50 overflow-hidden ${isLightMode ? 'bg-white border-slate-200' : 'bg-[#060b10] border-cyan-900/60'}`}>
-                                            <div className="max-h-48 overflow-y-auto scrollbar-thin scrollbar-track-transparent">
-                                                {conversations.length === 0 ? (
-                                                    <div className="p-3 text-[10px] italic text-center opacity-50">No chats found</div>
-                                                ) : conversations.map(conv => (
-                                                    <button
-                                                        key={conv.id}
-                                                        onClick={() => switchConversation(conv.id)}
-                                                        className={`w-full text-left px-3 py-2.5 text-[10px] truncate border-b transition-colors ${
-                                                            isLightMode ? 'border-slate-100 hover:bg-slate-50' : 'border-cyan-900/30 hover:bg-cyan-950/40'
-                                                        } ${activeConversation?.id === conv.id ? (isLightMode ? 'bg-slate-100 font-bold' : 'bg-cyan-900/40 font-bold text-cyan-300') : (isLightMode ? 'text-slate-600' : 'text-cyan-600')}`}
-                                                    >
-                                                        {conv.title}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
-                                <button
-                                    onClick={createConversation}
-                                    disabled={isCreatingConversation}
-                                    title="New Chat"
-                                    className={`flex items-center justify-center w-5 h-5 rounded transition-all disabled:opacity-50 ${isLightMode ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-cyan-900/50 text-cyan-400 hover:bg-cyan-800'}`}
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-                                        <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-                                    </svg>
-                                </button>
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-1" title="Connected"></div>
+                                {activeTab === 'memory' && memories.length > 0 && (
+                                    <button type="button" onClick={clearMemories} aria-label="Clear memory vault view" className={`min-h-8 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-red-400 transition-all hover:bg-red-500/20 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400`}>Clear View</button>
+                                )}
+
+                                <div className="flex min-w-0 items-center gap-2 sm:gap-3 ml-auto" ref={conversationControlRef}>
+                                    <div className="relative min-w-0 flex-1">
+                                        <button ref={conversationDisclosureRef} type="button" onClick={() => setIsConversationDropdownOpen((open) => !open)} aria-expanded={isConversationDropdownOpen} aria-controls="conversation-list" aria-label={`Current chat: ${activeConversation?.title ?? 'Loading chat'}`} title={activeConversation?.title ?? 'Loading chat'} className={`flex min-h-10 w-full min-w-0 items-center gap-2.5 rounded-lg px-3 text-left transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isLightMode ? 'hover:bg-slate-200/50' : 'hover:bg-white/5'}`}>
+                                            <span className={`shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] ${isLightMode ? 'text-slate-400' : 'text-cyan-700'}`}>Current chat</span>
+                                            <span className={`min-w-0 flex-1 truncate text-xs font-bold tracking-wide ${isLightMode ? 'text-slate-700' : 'text-cyan-100'}`}>{activeConversation?.title ?? 'Loading chat'}</span>
+                                            <span aria-hidden="true" className={`shrink-0 text-[10px] ${isLightMode ? 'text-slate-400' : 'text-cyan-600'}`}>â–¾</span>
+                                        </button>
+                                        {isConversationDropdownOpen && (
+                                            <div id="conversation-list" className={`absolute right-0 top-full z-50 mt-2 w-full min-w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border shadow-2xl backdrop-blur-xl ${isLightMode ? 'bg-white/90 border-slate-200' : 'bg-black/80 border-cyan-900/50 shadow-[0_12px_40px_rgba(0,0,0,0.8)]'}`}>
+                                                <div className="max-h-56 overflow-y-auto scrollbar-thin scrollbar-track-transparent">
+                                                    {conversations.length === 0 ? (
+                                                        <div className="p-4 text-center text-xs italic opacity-50">No chats found</div>
+                                                    ) : conversations.map((conv) => (
+                                                        <button key={conv.id} ref={(element) => { if (element) conversationOptionRefs.current.set(conv.id, element); else conversationOptionRefs.current.delete(conv.id); }} type="button" onClick={() => void switchConversation(conv)} aria-current={activeConversation?.id === conv.id ? 'true' : undefined} title={conv.title} className={`flex min-h-12 w-full items-center gap-3 border-b px-4 py-3 text-left text-xs transition-colors focus-visible:outline-none focus-visible:bg-white/5 ${isLightMode ? 'border-slate-100 hover:bg-slate-50' : 'border-white/5 hover:bg-white/5'} ${activeConversation?.id === conv.id ? (isLightMode ? 'bg-slate-100 font-bold' : 'bg-white/5 font-bold text-cyan-300') : (isLightMode ? 'text-slate-600' : 'text-cyan-500')}`}>
+                                                            <span className="min-w-0 flex-1 truncate">{conv.title}</span>
+                                                            {activeConversation?.id === conv.id && <span aria-hidden="true" className="shrink-0 font-bold text-cyan-400">âœ“</span>}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button type="button" onClick={createConversation} disabled={isCreatingConversation} aria-label="Create new chat" aria-busy={isCreatingConversation} className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all active:scale-[0.92] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${isLightMode ? 'bg-slate-900 text-white shadow-sm hover:bg-slate-800' : 'bg-cyan-400 text-cyan-950 shadow-[0_0_16px_rgba(34,211,238,0.2)] hover:bg-cyan-300 hover:shadow-[0_0_24px_rgba(34,211,238,0.4)]'}`}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
+                                    </button>
+                                    <div className={`hidden sm:flex shrink-0 items-center gap-2 pl-2 border-l ${isLightMode ? 'border-slate-200' : 'border-cyan-900/50'}`}>
+                                        <span className={`flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest ${isLightMode ? 'text-emerald-700' : 'text-emerald-400/80'}`}>
+                                            <span aria-hidden="true" className={`h-1.5 w-1.5 animate-pulse rounded-full motion-reduce:animate-none ${isLightMode ? 'bg-emerald-500' : 'bg-emerald-400'}`}></span>
+                                            Connected
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        {/* Thought Stream Scroll Container */}
+                        </div>                        {/* Thought Stream Scroll Container */}
                         <div
                             className={`flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 scrollbar-thin scrollbar-track-transparent transition-colors duration-500 ${isLightMode ? 'scrollbar-thumb-slate-300' : 'scrollbar-thumb-cyan-900/50'} ${activeTab === 'thoughts' ? '' : 'hidden'}`}
                             onScroll={handleScroll}
@@ -930,13 +941,12 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
 
                                         if (isBackgroundActivity || isSystemMessage) {
                                             return (
-                                                <div key={msg.id} className={`flex items-start gap-2 px-1.5 py-1 text-[10px] tracking-wide ${
-                                                    isSystemMessage
+                                                <div key={msg.id} className={`flex items-start gap-2 px-1.5 py-1 text-[10px] tracking-wide ${isSystemMessage
                                                         ? (isLightMode ? 'text-slate-500 font-mono' : 'text-slate-400 font-mono')
                                                         : (isCollaborationActivity || isAutonomyActivity)
                                                             ? (isLightMode ? 'text-indigo-600' : 'text-violet-400')
                                                             : (isLightMode ? 'text-slate-500' : 'text-cyan-700')
-                                                }`}>
+                                                    }`}>
                                                     {isSystemMessage ? (
                                                         <div className="flex flex-col gap-1 w-full mt-2 mb-2">
                                                             <div className="flex items-center gap-2 opacity-60">
@@ -960,18 +970,17 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                         const isUser = msg.brain === 'USER';
                                         return (
                                             <div key={msg.id} className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
-                                                <div className={`max-w-[85%] text-xs leading-6 break-words p-3.5 border shadow-sm transition-colors duration-500 ${
-                                                    isUser
+                                                <div className={`max-w-[85%] text-xs leading-6 break-words p-3.5 border shadow-sm transition-colors duration-500 ${isUser
                                                         ? (isLightMode ? 'bg-slate-800 text-white border-slate-900 rounded-2xl rounded-br-sm' : 'bg-cyan-900 text-cyan-50 border-cyan-700 rounded-2xl rounded-br-sm')
                                                         : `${getBrainBgColor(msg.brain)} rounded-2xl rounded-bl-sm`
-                                                }`}>
+                                                    }`}>
                                                     {!isUser && (
                                                         <div className={`flex items-baseline gap-2 mb-2 pb-1 border-b ${isLightMode ? 'border-slate-200/50' : 'border-cyan-900/50'}`}>
                                                             <span className={`font-bold tracking-wider ${getBrainColor(msg.brain)}`}>[{msg.brain}]</span>
                                                             <span className={`text-[9px] ${isLightMode ? 'text-slate-400' : 'text-cyan-800'}`}>{msg.time}</span>
                                                         </div>
                                                     )}
-                                                    
+
                                                     <div className={`font-sans tracking-normal flex flex-col gap-2 ${isUser ? (isLightMode ? 'text-slate-100' : 'text-cyan-50') : (isLightMode ? 'text-slate-700' : 'text-cyan-50')}`}>
                                                         <div className="flex-1 w-full overflow-hidden flex gap-2">
                                                             {!isUser && (
@@ -1013,11 +1022,11 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                                             key={idx}
                                                                             onClick={() => dispatchTask(group.question ? `${group.question}: ${opt}` : opt)}
                                                                             disabled={isSubmitting}
-                                                                            className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isUser 
+                                                                            className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-bold rounded shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isUser
                                                                                 ? (isLightMode ? 'bg-slate-700 border-slate-600 text-white hover:bg-slate-600' : 'bg-cyan-800 border-cyan-600 text-cyan-100 hover:bg-cyan-700')
                                                                                 : (isLightMode
-                                                                                ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 shadow-sm'
-                                                                                : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]')
+                                                                                    ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 shadow-sm'
+                                                                                    : 'bg-cyan-950/50 border border-cyan-700/50 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.5)]')
                                                                                 }`}
                                                                         >
                                                                             {opt}
@@ -1035,7 +1044,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                             ) : <p className={`mt-2 text-[10px] uppercase tracking-wide ${isUser ? (isLightMode ? 'text-slate-300' : 'text-cyan-300') : (isLightMode ? 'text-slate-500' : 'text-cyan-700')}`}>Approval {(approvals.find(approval => approval.id === approvalId)?.status ?? 'resolved')}</p>
                                                         )}
                                                     </div>
-                                                    
+
                                                     {isUser && (
                                                         <div className="flex justify-end mt-1 pt-1 border-t border-white/10">
                                                             <span className={`text-[9px] ${isLightMode ? 'text-slate-400' : 'text-cyan-600'}`}>{msg.time}</span>
@@ -1075,7 +1084,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                 <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded border ${isLightMode ? 'bg-purple-100 text-purple-900 border-purple-300' : 'bg-purple-500/20 text-purple-300 border-purple-500/30'}`}>
                                                     {mem.id}
                                                 </span>
-                                                    <span className={`text-xs font-semibold tracking-wide ${isLightMode ? 'text-slate-800' : 'text-purple-200'}`}>
+                                                <span className={`text-xs font-semibold tracking-wide ${isLightMode ? 'text-slate-800' : 'text-purple-200'}`}>
                                                     {mem.title}
                                                 </span>
                                             </div>
@@ -1147,7 +1156,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                 className="w-4 h-4 rounded-full bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center text-[10px] font-bold transition-all cursor-pointer"
                                                 title="Remove Image"
                                             >
-                                                ×
+                                                Ãƒâ€”
                                             </button>
                                         </div>
                                     ))}
@@ -1155,72 +1164,77 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                             )}
 
                             <form onSubmit={handleTaskSubmit} className="flex flex-col gap-2">
-                                <div className={`text-[10px] uppercase tracking-widest flex justify-between ${isLightMode ? 'text-slate-500' : 'text-cyan-600'}`}>
-                                    <span>Command Terminal {attachedImages.length > 0 && `(${attachedImages.length} Image Attached)`}</span>
-                                    {isSubmitting && <span className="text-yellow-500 animate-pulse">TRANSMITTING...</span>}
+                                <div className={`text-[10px] font-bold uppercase tracking-[0.15em] flex justify-between px-1 ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>
+                                    <span>Command Terminal {attachedImages.length > 0 && <span className="text-cyan-400">({attachedImages.length} Attached)</span>}</span>
+                                    {isSubmitting && <span className="text-amber-400 animate-pulse">TRANSMITTING...</span>}
                                 </div>
                                 <div
                                     onPaste={handlePaste}
                                     onDragOver={handleDragOver}
                                     onDragLeave={handleDragLeave}
                                     onDrop={handleDrop}
-                                    className={`flex items-center gap-2 p-1 rounded-md transition-all ${isDragging ? 'ring-2 ring-cyan-400 bg-cyan-950/40' : ''}`}
+                                    className={`flex items-end gap-2.5 transition-all ${isDragging ? 'ring-2 ring-cyan-400/50 bg-cyan-950/20 rounded-xl p-2 -m-2' : ''}`}
                                 >
                                     {/* Paperclip Button */}
                                     <button
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={isSubmitting}
-                                        className={`p-2 rounded-md border text-xs shrink-0 transition-all cursor-pointer disabled:opacity-40 ${isLightMode
-                                            ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-[0_1px_3px_rgba(15,23,42,0.06)]'
-                                            : 'bg-cyan-950/40 border-cyan-800/60 text-cyan-400 hover:bg-cyan-900/60 hover:text-cyan-200 shadow-[0_0_8px_rgba(34,211,238,0.2)]'
+                                        className={`w-[48px] h-[48px] flex items-center justify-center rounded-xl border shrink-0 transition-all cursor-pointer disabled:opacity-40 active:scale-[0.96] ${isLightMode
+                                            ? 'bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:border-slate-300 shadow-[0_2px_8px_rgba(15,23,42,0.04)]'
+                                            : 'bg-white/5 border-white/10 text-cyan-400 hover:bg-white/10 hover:border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
                                             }`}
                                         title="Attach / Select Images (or paste from clipboard Ctrl+V)"
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 010 12.728l-7.07 7.07a6 6 0 01-8.486-8.486l7.07-7.07a4 4 0 015.657 5.657l-7.07 7.07a2 2 0 01-2.828-2.828l7.07-7.07" />
                                         </svg>
                                     </button>
 
-                                    <div className="relative flex-1">
-                                        <span className={`absolute left-3 top-3 text-sm font-bold ${isLightMode ? 'text-slate-400' : 'text-cyan-500'}`}>&gt;</span>
+                                    <div className="relative flex-1 group">
+                                        <span className={`absolute left-4 top-[14px] text-sm font-bold select-none transition-colors ${isLightMode ? 'text-slate-400 group-focus-within:text-cyan-600' : 'text-cyan-600/50 group-focus-within:text-cyan-400'}`}>&gt;</span>
                                         <textarea
                                             value={taskInput}
                                             onChange={(e) => setTaskInput(e.target.value)}
                                             onKeyDown={handleTaskInputKeyDown}
                                             placeholder={attachedImages.length > 0 ? "Enter instructions for attached image(s)..." : "Enter task or paste/drag image..."}
                                             disabled={isSubmitting}
-                                            rows={3}
-                                            className={`w-full min-h-20 max-h-48 resize-y border rounded-md py-2 pl-8 pr-4 text-xs leading-5 focus:outline-none focus:ring-1 transition-all disabled:opacity-50 ${isLightMode ? 'bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] focus:border-cyan-600 focus:ring-cyan-500/30' : 'bg-cyan-950/30 border-cyan-800/50 text-cyan-300 placeholder:text-cyan-800/70 focus:border-cyan-400 focus:ring-cyan-400'}`}
+                                            rows={1}
+                                            className={`w-full min-h-[48px] max-h-48 resize-y border rounded-xl py-3.5 pl-[38px] pr-4 text-xs font-medium leading-relaxed focus:outline-none transition-all disabled:opacity-50 ${isLightMode
+                                                    ? 'bg-white border-slate-200 text-slate-800 placeholder:text-slate-400 shadow-[inset_0_2px_4px_rgba(15,23,42,0.02)] focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10'
+                                                    : 'bg-black/40 backdrop-blur-md border-cyan-900/50 text-cyan-50 placeholder:text-cyan-700 focus:bg-cyan-950/30 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 shadow-[inset_0_2px_8px_rgba(0,0,0,0.5)]'
+                                                }`}
                                         />
                                     </div>
                                     {isTaskActive || isSubmitting ? (
                                         <button
                                             type="button"
                                             onClick={handleAbortTask}
-                                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-md border font-mono text-xs tracking-wider uppercase transition-all shrink-0 cursor-pointer ${isLightMode ? 'border-red-700 bg-red-100 text-red-900 hover:bg-red-200' : 'border-red-500/60 bg-red-950/60 text-red-400 hover:bg-red-900/80 hover:text-red-200 shadow-[0_0_12px_rgba(239,68,68,0.4)]'}`}
+                                            className={`flex items-center justify-center gap-2 px-5 h-[48px] rounded-xl border font-bold text-xs tracking-widest uppercase transition-all shrink-0 cursor-pointer active:scale-[0.96] ${isLightMode ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100' : 'border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/50'}`}
                                             title="Emergency Abort Current Task & Clear Queue"
                                         >
-                                            <span className="w-2 h-2 rounded-sm bg-red-500 animate-ping" />
+                                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                                             <span>STOP</span>
                                         </button>
                                     ) : (
                                         <button
                                             type="submit"
                                             disabled={!taskInput.trim() && attachedImages.length === 0}
-                                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-md border text-xs font-mono tracking-wider uppercase shrink-0 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${isLightMode
-                                                ? 'bg-slate-900 text-white border-slate-900 hover:bg-slate-700 shadow-[0_3px_10px_rgba(15,23,42,0.16)]'
-                                                : 'bg-cyan-950/60 border-cyan-700/60 text-cyan-300 hover:bg-cyan-900/80 hover:shadow-[0_0_10px_rgba(34,211,238,0.4)]'
+                                            className={`flex items-center justify-center gap-2 px-6 h-[48px] rounded-xl font-bold text-xs tracking-widest uppercase shrink-0 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96] ${isLightMode
+                                                    ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-[0_4px_12px_rgba(15,23,42,0.15)] disabled:shadow-none'
+                                                    : 'bg-cyan-400 text-cyan-950 hover:bg-cyan-300 shadow-[0_0_16px_rgba(34,211,238,0.3)] hover:shadow-[0_0_24px_rgba(34,211,238,0.5)] disabled:shadow-none disabled:bg-cyan-900/40 disabled:text-cyan-700'
                                                 }`}
                                         >
-                                            <svg className="w-3.5 h-3.5 rotate-200 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3 21l18-9L3 3l3 9zm0 0h7" />
-                                            </svg>
                                             <span>SEND</span>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                            </svg>
                                         </button>
                                     )}
                                 </div>
-                                <p className={`text-[10px] ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>Enter sends. Shift + Enter adds a new line.</p>
+                                <div className="flex justify-end pr-1 mt-1">
+                                    <p className={`text-[10px] font-medium tracking-wide ${isLightMode ? 'text-slate-400' : 'text-cyan-800/80'}`}>Enter sends. Shift + Enter adds a new line.</p>
+                                </div>
                             </form>
                         </div>
                     </aside>
