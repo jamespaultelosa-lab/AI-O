@@ -385,10 +385,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
     };
 
     const handleTaskInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            e.preventDefault();
-            void submitTaskInput();
-        }
+        if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
+
+        e.preventDefault();
+        void submitTaskInput();
     };
 
     const scrollToBottom = () => {
@@ -1220,7 +1220,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                         </button>
                                     )}
                                 </div>
-                                <p className={`text-[10px] ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>Enter adds a new line. Ctrl/Cmd + Enter sends.</p>
+                                <p className={`text-[10px] ${isLightMode ? 'text-slate-500' : 'text-cyan-700'}`}>Enter sends. Shift + Enter adds a new line.</p>
                             </form>
                         </div>
                     </aside>
