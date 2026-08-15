@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import BrainNode from '@/Components/BrainNode';
 import Echo from 'laravel-echo';
@@ -338,6 +338,9 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
     };
     const [visibleCount, setVisibleCount] = useState(15);
     const [autoScroll, setAutoScroll] = useState(true);
+    const autoScrollRef = useRef(true);
+    const thoughtStreamContainerRef = useRef<HTMLDivElement>(null);
+    const scrollPosRef = useRef<{ prevHeight: number; prevScrollTop: number } | null>(null);
     const [taskInput, setTaskInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [sidebarWidth, setSidebarWidth] = useState(440);
@@ -348,6 +351,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         return false;
     });
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        autoScrollRef.current = autoScroll;
+    }, [autoScroll]);
 
     // Engine Switcher State
     const [engine, setEngine] = useState<'codex' | 'antigravity'>('codex');
@@ -375,23 +382,46 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         }
     };
 
-    // Voice Synthesis (TTS) State
+    // Voice Synthesis (TTS) State & Natural Human Voice Engine
     const [ttsEnabled, setTtsEnabled] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('fais_tts_enabled') === 'true';
         }
         return false;
     });
+    const ttsEnabledRef = useRef(ttsEnabled);
+    const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
 
     useEffect(() => {
+        ttsEnabledRef.current = ttsEnabled;
         if (typeof window !== 'undefined') {
             localStorage.setItem('fais_tts_enabled', ttsEnabled ? 'true' : 'false');
         }
     }, [ttsEnabled]);
 
+    useEffect(() => {
+        if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+        const updateVoices = () => {
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                setAvailableVoices(voices);
+            }
+        };
+
+        updateVoices();
+        window.speechSynthesis.onvoiceschanged = updateVoices;
+
+        return () => {
+            if (window.speechSynthesis) {
+                window.speechSynthesis.onvoiceschanged = null;
+            }
+        };
+    }, []);
+
     const sanitizeTextForSpeech = (text: string): string => {
         return text
-            .replace(/```[\s\S]*?```/g, '')
+            .replace(/```[\s\S]*?```/g, ' [code block omitted] ')
             .replace(/`([^`]+)`/g, '$1')
             .replace(/\[DIFF:[\s\S]*?\]/gi, '')
             .replace(/\[IMAGES:[\s\S]*?\]/gi, '')
@@ -400,11 +430,89 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
             .replace(/\[APPROVAL:[\s\S]*?\]/gi, '')
             .replace(/\[AUTONOMY\]/gi, '')
             .replace(/\[COLLABORATION\]/gi, '')
-            .replace(/\[DONE\]/gi, '')
-            .replace(/https?:\/\/\S+/gi, '')
-            .replace(/[*#_~>]/g, '')
+            .replace(/\[DONE\]/gi, 'Finished. ')
+            .replace(/https?:\/\/\S+/gi, 'link')
+            .replace(/\b(?:e\.g\.|eg)\b/gi, 'for example')
+            .replace(/\b(?:i\.e\.|ie)\b/gi, 'that is')
+            .replace(/\bTS\b/g, 'TypeScript')
+            .replace(/\bJS\b/g, 'JavaScript')
+            .replace(/\bPRs?\b/gi, 'pull request')
+            .replace(/\bUI\b/g, 'U I')
+            .replace(/\bUX\b/g, 'U X')
+            .replace(/\bCLI\b/g, 'command line')
+            .replace(/\bSRS\b/g, 'S R S')
+            .replace(/\bIPC\b/g, 'I P C')
+            .replace(/[*#_~>|]/g, ' ')
+            .replace(/[\\/][a-zA-Z0-9_\-.]+/g, (match) => ' ' + match.replace(/^[\\/]/, ''))
             .replace(/\s+/g, ' ')
             .trim();
+    };
+
+    const getHumanVoiceForBrain = (brainName: string, voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null => {
+        if (!voices || voices.length === 0) return null;
+
+        const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+        const pool = englishVoices.length > 0 ? englishVoices : voices;
+
+        // Helper to find voice matching priority keywords
+        const findMatching = (keywords: string[]) => {
+            for (const kw of keywords) {
+                const found = pool.find(v => v.name.toLowerCase().includes(kw.toLowerCase()));
+                if (found) return found;
+            }
+            return null;
+        };
+
+        switch (brainName) {
+            case 'Architect':
+                // Mature, articulate British / Mid-Atlantic male voice
+                return findMatching([
+                    'Ryan Online (Natural)',
+                    'Oliver Online (Natural)',
+                    'George',
+                    'Google UK English Male',
+                    'en-GB',
+                    'Daniel',
+                    'Arthur'
+                ]) || pool.find(v => v.name.toLowerCase().includes('male')) || pool[0];
+
+            case 'Security':
+                // Steady, analytical, calm male voice
+                return findMatching([
+                    'Christopher Online (Natural)',
+                    'Steffan Online (Natural)',
+                    'David Desktop',
+                    'David',
+                    'Google US English',
+                    'Guy Online (Natural)'
+                ]) || pool.find(v => v.name.toLowerCase().includes('male')) || pool[0];
+
+            case 'Junior_Dev':
+                // Crisp, upbeat, friendly female/youthful voice
+                return findMatching([
+                    'Jenny Online (Natural)',
+                    'Sonia Online (Natural)',
+                    'Libby Online (Natural)',
+                    'Google US English Female',
+                    'Google UK English Female',
+                    'Samantha',
+                    'Victoria',
+                    'Zira Desktop',
+                    'Zira'
+                ]) || pool.find(v => v.name.toLowerCase().includes('female')) || pool[0];
+
+            case 'Senior_Dev':
+            default:
+                // Warm, confident, natural developer male voice
+                return findMatching([
+                    'Guy Online (Natural)',
+                    'Eric Online (Natural)',
+                    'Google US English',
+                    'Alex',
+                    'Mark',
+                    'David'
+                ]) || pool.find(v => v.name.toLowerCase().includes('male')) || pool[0];
+        }
     };
 
     const speakMessage = (brainName: string, text: string) => {
@@ -414,38 +522,41 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
 
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(clean);
-        const voices = window.speechSynthesis.getVoices();
+        const voices = availableVoices.length > 0 ? availableVoices : window.speechSynthesis.getVoices();
+        const chosenVoice = getHumanVoiceForBrain(brainName, voices);
 
+        if (chosenVoice) {
+            utterance.voice = chosenVoice;
+            utterance.lang = chosenVoice.lang || 'en-US';
+        }
+
+        // Natural human baseline tuning (prevent robotic formant pitch-shifting)
         switch (brainName) {
             case 'Architect':
-                utterance.pitch = 0.85;
-                utterance.rate = 0.95;
-                const britishVoice = voices.find(v => v.lang.includes('en-GB') || v.name.includes('UK') || v.name.includes('Daniel') || v.name.includes('George'));
-                if (britishVoice) utterance.voice = britishVoice;
+                utterance.pitch = 0.96;
+                utterance.rate = 0.98;
                 break;
             case 'Security':
-                utterance.pitch = 0.75;
-                utterance.rate = 1.05;
-                const securityVoice = voices.find(v => v.name.includes('Male') || v.name.includes('David') || v.lang.startsWith('en'));
-                if (securityVoice) utterance.voice = securityVoice;
+                utterance.pitch = 0.93;
+                utterance.rate = 0.97;
                 break;
             case 'Junior_Dev':
-                utterance.pitch = 1.20;
-                utterance.rate = 1.15;
-                const juniorVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Samantha'));
-                if (juniorVoice) utterance.voice = juniorVoice;
+                utterance.pitch = 1.04;
+                utterance.rate = 1.02;
                 break;
             case 'Senior_Dev':
             default:
-                utterance.pitch = 0.95;
+                utterance.pitch = 1.00;
                 utterance.rate = 1.00;
-                const seniorVoice = voices.find(v => v.name.includes('Guy') || v.name.includes('Natural') || v.lang.includes('en-US'));
-                if (seniorVoice) utterance.voice = seniorVoice;
                 break;
         }
 
+        utterance.volume = 1.0;
         window.speechSynthesis.speak(utterance);
     };
+
+
+
 
 
     useEffect(() => {
@@ -634,29 +745,48 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
         void submitTaskInput();
     };
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+        if (thoughtStreamContainerRef.current) {
+            thoughtStreamContainerRef.current.scrollTo({
+                top: thoughtStreamContainerRef.current.scrollHeight,
+                behavior
+            });
+        } else {
+            messagesEndRef.current?.scrollIntoView({ behavior });
+        }
     };
 
     useEffect(() => {
         if (autoScroll) {
-            scrollToBottom();
+            scrollToBottom("smooth");
         }
-    }, [messages, autoScroll]);
+    }, [messages]);
+
+    useLayoutEffect(() => {
+        if (scrollPosRef.current && thoughtStreamContainerRef.current) {
+            const delta = thoughtStreamContainerRef.current.scrollHeight - scrollPosRef.current.prevHeight;
+            if (delta > 0) {
+                thoughtStreamContainerRef.current.scrollTop = scrollPosRef.current.prevScrollTop + delta;
+            }
+            scrollPosRef.current = null;
+        }
+    }, [visibleCount]);
 
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
 
-        // If near top, load older messages
-        if (scrollTop < 50 && visibleCount < messages.length) {
-            setVisibleCount(prev => Math.min(prev + 20, messages.length));
-        }
+        // If user is near the bottom (within 60px), re-enable auto-scroll.
+        // If user scrolled up, disable auto-scroll so the view stays steady.
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 60;
+        setAutoScroll(isNearBottom);
 
-        // If user scrolls up manually, disable auto-scroll. Enable if they scroll back to bottom.
-        if (scrollHeight - scrollTop - clientHeight < 50) {
-            setAutoScroll(true);
-        } else {
-            setAutoScroll(false);
+        // If near top, load older messages and preserve scroll position
+        if (scrollTop < 60 && visibleCount < messages.length) {
+            scrollPosRef.current = {
+                prevHeight: scrollHeight,
+                prevScrollTop: scrollTop,
+            };
+            setVisibleCount(prev => Math.min(prev + 20, messages.length));
         }
     };
 
@@ -675,9 +805,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
 
             // Jump straight to bottom without animation to show latest
             setTimeout(() => {
-                if (messagesEndRef.current) {
-                    messagesEndRef.current.scrollIntoView();
-                }
+                scrollToBottom("auto");
             }, 100);
         } catch (err) {
             console.error("Failed to load conversation messages", err);
@@ -757,12 +885,12 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                     time: new Date(e.timestamp).toLocaleTimeString([], { hour12: false })
                 }].slice(-30)); // Keep up to 30 in memory
 
-                if (ttsEnabled && e.brainName && e.brainName !== 'USER' && e.brainName !== 'SYSTEM') {
+                if (ttsEnabledRef.current && e.brainName && e.brainName !== 'USER' && e.brainName !== 'SYSTEM') {
                     speakMessage(e.brainName, e.message);
                 }
 
                 // If auto-scrolling is enabled, also bump the visible count so we don't hide new messages
-                if (autoScroll) {
+                if (autoScrollRef.current) {
                     setVisibleCount(prev => Math.min(prev + 1, 30));
                 }
             });
@@ -791,7 +919,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
             echo.leave('brains.messages');
             echo.leave('brains.memory');
         };
-    }, [autoScroll, ttsEnabled]);
+    }, []);
 
 
     useEffect(() => {
@@ -1108,6 +1236,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                             </div>
                         </div>                        {/* Thought Stream Scroll Container */}
                         <div
+                            ref={thoughtStreamContainerRef}
                             className={`flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 scrollbar-thin scrollbar-track-transparent transition-colors duration-500 ${isLightMode ? 'scrollbar-thumb-slate-300' : 'scrollbar-thumb-cyan-900/50'} ${activeTab === 'thoughts' ? '' : 'hidden'}`}
                             onScroll={handleScroll}
                         >
@@ -1425,6 +1554,28 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                 ))
                             )}
                         </div>
+
+                        {/* Floating Scroll to Bottom Indicator */}
+                        {!autoScroll && activeTab === 'thoughts' && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setAutoScroll(true);
+                                    scrollToBottom('smooth');
+                                }}
+                                aria-label="Scroll to latest thoughts"
+                                className={`absolute bottom-52 sm:bottom-48 right-6 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg transition-all transform hover:scale-105 active:scale-95 animate-bounce cursor-pointer ${
+                                    isLightMode
+                                        ? 'bg-slate-900 text-white shadow-slate-900/25 hover:bg-slate-800'
+                                        : 'bg-cyan-400 text-cyan-950 shadow-[0_0_15px_rgba(34,211,238,0.5)] hover:bg-cyan-300'
+                                }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <span>Scroll to latest</span>
+                            </button>
+                        )}
 
                         {/* Terminal Input */}
                         <div className={`p-4 border-t transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-100/90' : 'border-cyan-900/50 bg-black/60'}`}>

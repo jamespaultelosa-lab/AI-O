@@ -34,7 +34,7 @@ function loadProjectEnvironment() {
 loadProjectEnvironment();
 
 const AIO_PROJECT_ROOT = path.resolve(__dirname, '..');
-const FAIS_PROJECT_ROOT = process.env.FAIS_PROJECT_ROOT || '\\\\wsl.localhost\\Ubuntu\\home\\dev-james\\projects\\fais-payroll-srs';
+const FAIS_PROJECT_ROOT = process.env.FAIS_PROJECT_ROOT || '';
 const CONTEXT_FILE = process.env.BRAIN_CONTEXT_FILE || path.resolve(__dirname, '..', 'storage', 'app', 'agent_ipc', 'current_brief.json');
 const BRAINS = ['Architect', 'Security', 'Senior_Dev', 'Junior_Dev'];
 let selectedProject = null;

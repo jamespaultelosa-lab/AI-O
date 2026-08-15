@@ -101,15 +101,17 @@ All Antigravity subagents directly inherit the collective intelligence of the FA
 ### Voice Synthesis (TTS) per Brain Persona
 
 The Thought Stream features browser-native Web Speech API voice synthesis with customized voice timbre and modulation per persona:
-- **Architect**: Deep authoritative tone (Pitch `0.85`, Rate `0.95`, British/Baritone timber).
-- **Security**: Low, steady, clinical, analytical tone (Pitch `0.75`, Rate `1.05`).
-- **Senior_Dev**: Confident, natural developer voice (Pitch `0.95`, Rate `1.00`).
-- **Junior_Dev**: Upbeat, energetic, expressive tone (Pitch `1.20`, Rate `1.15`).
+- **Architect**: Natural British/Mid-Atlantic Male (`Microsoft Ryan/Oliver Natural`, `George`, `Google UK Male`), Pitch `0.96`, Rate `0.98`.
+- **Security**: Steady Analytical Calm Male (`Microsoft Christopher/Steffan Natural`, `David Desktop`), Pitch `0.93`, Rate `0.97`.
+- **Senior_Dev**: Warm Confident Developer Male (`Microsoft Guy/Eric Natural`, `Google US Male`, `Alex`), Pitch `1.00`, Rate `1.00`.
+- **Junior_Dev**: Crisp Friendly Youthful Voice (`Microsoft Jenny/Sonia Natural`, `Google US Female`, `Samantha`), Pitch `1.04`, Rate `1.02`.
 
 **Controls**:
 - Header TTS toggle button (`🔊 Voice On` / `🔇 Muted`) persisted in `localStorage`.
-- Auto-speaks incoming Thought Stream messages with an intelligent text sanitizer that strips markdown code blocks, diffs, and bracketed metadata before speaking.
+- Auto-speaks incoming Thought Stream messages with an intelligent text sanitizer that expands developer abbreviations and strips code blocks/diffs.
 - Individual 1-click speaker replay button on each message card in the Thought Stream.
+
+
 
 
 Project paths come from `.env`: `OBSIDIAN_VAULT_PATH` and

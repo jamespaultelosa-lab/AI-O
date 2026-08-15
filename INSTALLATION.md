@@ -132,6 +132,8 @@ node .agents/task_watcher.cjs
   - When in Antigravity mode, each brain uses its dedicated subagent definition in `.agents/brains/*.agent.md` and inherits 100% of Obsidian Vault knowledge and learnings.
 - **Voice Synthesis (TTS)**: Click the speaker icon in the header (`🔊 Voice On` / `🔇 Muted`) to enable/mute real-time voice speech for all incoming brain thoughts. Replay individual brain thoughts anytime by clicking the speaker icon on any message bubble.
 
+
+
 ---
 
 ## 4. Troubleshooting
