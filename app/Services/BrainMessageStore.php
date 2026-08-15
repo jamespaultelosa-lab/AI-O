@@ -10,6 +10,11 @@ use Illuminate\Support\Str;
 
 class BrainMessageStore
 {
+    public function __construct(private ?BrainHistorySyncService $syncService = null)
+    {
+        $this->syncService ??= app(BrainHistorySyncService::class);
+    }
+
     public function record(string $brain, string $message, ?string $conversationId = null): ?BrainMessage
     {
         try {
@@ -25,6 +30,8 @@ class BrainMessageStore
             } else {
                 $conversation?->touch();
             }
+
+            $this->syncService?->export();
 
             return $record;
         } catch (QueryException) {
@@ -46,6 +53,10 @@ class BrainMessageStore
 
     public function recent(?string $conversationId = null, int $limit = 50): array
     {
+        if ($this->syncService?->shouldAutoImport()) {
+            $this->syncService->import();
+        }
+
         $conversationId ??= $this->historyConversation()->id;
         try {
             return BrainMessage::latest()

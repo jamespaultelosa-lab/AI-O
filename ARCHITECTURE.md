@@ -24,7 +24,7 @@ every Codex prompt and decision follow-up uses only `transport_task` plus the
 attachment metadata. The full display text never enters watcher logs, webhook
 payloads, error output, previous execution context, or model prompts.
 
-### Conversation History
+### Conversation History & Cross-Device Sync
 
 `brain_conversations` owns the Thought Stream's chat boundaries. Existing
 messages and tasks are placed in the permanent `History` conversation during
@@ -32,6 +32,13 @@ migration; newly created chats receive an ID that travels with dispatch IPC,
 task records, webhook replies, and approval notifications. The Jarvis UI loads
 and displays only the selected conversation, while the shared broadcast channel
 includes that conversation ID so inactive chats do not pollute the active view.
+
+To synchronize chat history across multiple workstations via git,
+`BrainHistorySyncService` maintains a version-controlled JSON data snapshot at
+`database/brain_history.json`. Writing messages or creating conversations automatically
+exports the latest state, while application startup, database seeders, CLI
+`php artisan brain:sync-history`, and UI reads automatically import any missing or
+updated conversations and messages idempotently into SQLite.
 
 Task submission does not create a `SYSTEM` acknowledgement. While Codex is
 working, its lifecycle items publish deduplicated, safe phase updates from the
@@ -43,6 +50,7 @@ Brief greetings addressed to the group are a separate conversational path: all
 four brain threads reply. Explicit aliases (`archi`/`architect`, `security`,
 `senior dev`, and `junior`) select the corresponding lead instead of falling
 through to the default Senior Dev route.
+
 
 Project paths come from `.env`: `OBSIDIAN_VAULT_PATH` and
 `FAIS_PROJECT_ROOT`. The app-server and watcher restart when `composer run dev`

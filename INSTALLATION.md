@@ -38,12 +38,15 @@ Welcome to **AIO** (**A**bsolute **I**diots **O**rchestra)! This guide will help
    FAIS_PROJECT_ROOT='\\wsl.localhost\Ubuntu\home\dev-james\projects\fais-payroll-srs'
    ```
 
-5. **Run Migrations**
+5. **Run Migrations & Seed Chat History**
    ```bash
    php artisan migrate
+   php artisan db:seed
    ```
+   *Note: Thought Stream chat history syncs across workstations automatically via `database/brain_history.json`. You can also manually sync history anytime using `php artisan brain:sync-history`.*
 
 ---
+
 
 ## 2. Startup Guide
 

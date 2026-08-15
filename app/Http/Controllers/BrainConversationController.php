@@ -3,13 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\BrainConversation;
+use App\Services\BrainHistorySyncService;
 use App\Services\BrainMessageStore;
 use Illuminate\Http\Request;
 
 class BrainConversationController extends Controller
 {
+    public function __construct(private ?BrainHistorySyncService $syncService = null)
+    {
+        $this->syncService ??= app(BrainHistorySyncService::class);
+    }
+
     public function index(BrainMessageStore $messageStore)
     {
+        if ($this->syncService?->shouldAutoImport()) {
+            $this->syncService->import();
+        }
+
         $messageStore->historyConversation();
 
         return response()->json(BrainConversation::query()
@@ -25,6 +35,8 @@ class BrainConversationController extends Controller
         $conversation = BrainConversation::create([
             'title' => trim($validated['title'] ?? '') ?: 'New chat',
         ])->refresh();
+
+        $this->syncService?->export();
 
         return response()->json($conversation, 201);
     }
