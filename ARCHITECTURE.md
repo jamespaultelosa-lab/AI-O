@@ -82,6 +82,36 @@ interactive option buttons.
   terminal provides 1-click execution for routine workflows: Pre-Push Audit & Commit,
   Run Test Suite, Evolve Skills, Sync History, Security Scan, and Health Check.
 
+### Dual-Engine Architecture & Antigravity Subagents
+
+FAIS Brains supports two execution engines via a 1-click toggle in the Jarvis UI header:
+1. **Codex Brain Pool (`⚡ Codex`)**: Executes through the long-lived `codex app-server --stdio` process with specialized model threads.
+2. **Antigravity IDE Agents (`✨ Antigravity`)**: Executes directly through the Antigravity multi-agent system, where each brain (`Architect`, `Security`, `Senior_Dev`, `Junior_Dev`) has its own dedicated subagent definition file in `.agents/brains/*.agent.md`.
+
+**100% Knowledge Inheritance**:
+All Antigravity subagents directly inherit the collective intelligence of the FAIS Brains ecosystem:
+- `Global_Context/Consciousness_Protocol.md` (autonomous collaboration and sentience guidelines).
+- `Brains/{Brain}/Persona.md` (role personality, voice, and boundaries).
+- `Brains/{Brain}/Learnings.md` (historical observations and rules).
+- `Mistakes Log.md` (anti-patterns and regression prevention).
+- `Docs/Skills/*.md` (evolved skills).
+- `agent_state.cjs` (active goal chaining and durable context).
+- Bi-directional vault learning: Any `[[VAULT_LEARNING: ...]]` directives emitted by Antigravity subagents persist automatically into the Obsidian Vault.
+
+### Voice Synthesis (TTS) per Brain Persona
+
+The Thought Stream features browser-native Web Speech API voice synthesis with customized voice timbre and modulation per persona:
+- **Architect**: Deep authoritative tone (Pitch `0.85`, Rate `0.95`, British/Baritone timber).
+- **Security**: Low, steady, clinical, analytical tone (Pitch `0.75`, Rate `1.05`).
+- **Senior_Dev**: Confident, natural developer voice (Pitch `0.95`, Rate `1.00`).
+- **Junior_Dev**: Upbeat, energetic, expressive tone (Pitch `1.20`, Rate `1.15`).
+
+**Controls**:
+- Header TTS toggle button (`🔊 Voice On` / `🔇 Muted`) persisted in `localStorage`.
+- Auto-speaks incoming Thought Stream messages with an intelligent text sanitizer that strips markdown code blocks, diffs, and bracketed metadata before speaking.
+- Individual 1-click speaker replay button on each message card in the Thought Stream.
+
+
 Project paths come from `.env`: `OBSIDIAN_VAULT_PATH` and
 
 

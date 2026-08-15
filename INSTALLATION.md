@@ -126,10 +126,19 @@ node .agents/task_watcher.cjs
 
 ---
 
-## 3. Troubleshooting
+## 3. Dual-Engine Switcher & Voice Synthesis (TTS)
+
+- **Engine Switcher**: You can switch between **Codex Brain Pool** (`⚡ Codex`) and **Antigravity IDE Agents** (`✨ Antigravity`) directly in the Jarvis UI header.
+  - When in Antigravity mode, each brain uses its dedicated subagent definition in `.agents/brains/*.agent.md` and inherits 100% of Obsidian Vault knowledge and learnings.
+- **Voice Synthesis (TTS)**: Click the speaker icon in the header (`🔊 Voice On` / `🔇 Muted`) to enable/mute real-time voice speech for all incoming brain thoughts. Replay individual brain thoughts anytime by clicking the speaker icon on any message bubble.
+
+---
+
+## 4. Troubleshooting
 
 - **Tasks stuck on "Forwarding to AI agent..."**: Ensure **Terminal 3** (Task Watcher) is running.
 - **Brain UI not animating / no real-time updates**: Ensure **Terminal 2** (Reverb) is running on port 8081.
 - **Watcher exits with `Cannot find module './brain_orchestrator.cjs'`**: Restore the
   tracked `.agents/brain_orchestrator.cjs` and `.agents/codex_brain_pool.cjs` files;
   they provide task routing and cancellable Codex execution.
+

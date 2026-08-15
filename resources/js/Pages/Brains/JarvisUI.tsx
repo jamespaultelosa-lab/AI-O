@@ -349,6 +349,105 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
     });
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Engine Switcher State
+    const [engine, setEngine] = useState<'codex' | 'antigravity'>('codex');
+    const [isSwitchingEngine, setIsSwitchingEngine] = useState(false);
+
+    useEffect(() => {
+        axios.get('/api/brain/engine')
+            .then(res => {
+                if (res.data?.engine === 'antigravity' || res.data?.engine === 'codex') {
+                    setEngine(res.data.engine);
+                }
+            })
+            .catch(() => {});
+    }, []);
+
+    const toggleEngine = async () => {
+        const next = engine === 'codex' ? 'antigravity' : 'codex';
+        setEngine(next);
+        setIsSwitchingEngine(true);
+        try {
+            await axios.post('/api/brain/engine', { engine: next });
+        } catch {
+        } finally {
+            setIsSwitchingEngine(false);
+        }
+    };
+
+    // Voice Synthesis (TTS) State
+    const [ttsEnabled, setTtsEnabled] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('fais_tts_enabled') === 'true';
+        }
+        return false;
+    });
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('fais_tts_enabled', ttsEnabled ? 'true' : 'false');
+        }
+    }, [ttsEnabled]);
+
+    const sanitizeTextForSpeech = (text: string): string => {
+        return text
+            .replace(/```[\s\S]*?```/g, '')
+            .replace(/`([^`]+)`/g, '$1')
+            .replace(/\[DIFF:[\s\S]*?\]/gi, '')
+            .replace(/\[IMAGES:[\s\S]*?\]/gi, '')
+            .replace(/\[QUESTION:[\s\S]*?\]/gi, '')
+            .replace(/\[OPTIONS:[\s\S]*?\]/gi, '')
+            .replace(/\[APPROVAL:[\s\S]*?\]/gi, '')
+            .replace(/\[AUTONOMY\]/gi, '')
+            .replace(/\[COLLABORATION\]/gi, '')
+            .replace(/\[DONE\]/gi, '')
+            .replace(/https?:\/\/\S+/gi, '')
+            .replace(/[*#_~>]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    };
+
+    const speakMessage = (brainName: string, text: string) => {
+        if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+        const clean = sanitizeTextForSpeech(text);
+        if (!clean) return;
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(clean);
+        const voices = window.speechSynthesis.getVoices();
+
+        switch (brainName) {
+            case 'Architect':
+                utterance.pitch = 0.85;
+                utterance.rate = 0.95;
+                const britishVoice = voices.find(v => v.lang.includes('en-GB') || v.name.includes('UK') || v.name.includes('Daniel') || v.name.includes('George'));
+                if (britishVoice) utterance.voice = britishVoice;
+                break;
+            case 'Security':
+                utterance.pitch = 0.75;
+                utterance.rate = 1.05;
+                const securityVoice = voices.find(v => v.name.includes('Male') || v.name.includes('David') || v.lang.startsWith('en'));
+                if (securityVoice) utterance.voice = securityVoice;
+                break;
+            case 'Junior_Dev':
+                utterance.pitch = 1.20;
+                utterance.rate = 1.15;
+                const juniorVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Samantha'));
+                if (juniorVoice) utterance.voice = juniorVoice;
+                break;
+            case 'Senior_Dev':
+            default:
+                utterance.pitch = 0.95;
+                utterance.rate = 1.00;
+                const seniorVoice = voices.find(v => v.name.includes('Guy') || v.name.includes('Natural') || v.lang.includes('en-US'));
+                if (seniorVoice) utterance.voice = seniorVoice;
+                break;
+        }
+
+        window.speechSynthesis.speak(utterance);
+    };
+
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('fais_theme', isLightMode ? 'light' : 'dark');
@@ -658,6 +757,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                     time: new Date(e.timestamp).toLocaleTimeString([], { hour12: false })
                 }].slice(-30)); // Keep up to 30 in memory
 
+                if (ttsEnabled && e.brainName && e.brainName !== 'USER' && e.brainName !== 'SYSTEM') {
+                    speakMessage(e.brainName, e.message);
+                }
+
                 // If auto-scrolling is enabled, also bump the visible count so we don't hide new messages
                 if (autoScroll) {
                     setVisibleCount(prev => Math.min(prev + 1, 30));
@@ -688,7 +791,8 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
             echo.leave('brains.messages');
             echo.leave('brains.memory');
         };
-    }, []);
+    }, [autoScroll, ttsEnabled]);
+
 
     useEffect(() => {
         if (!isConversationDropdownOpen) return;
@@ -834,17 +938,48 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                             </span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4 sm:gap-4">
+                    <div className="flex items-center gap-2.5 sm:gap-3">
                         {queueCount > 0 && (
                             <span className="text-xs font-mono px-2.5 py-1 rounded border border-amber-500/50 bg-amber-950/40 text-amber-400 tracking-widest uppercase animate-pulse">
                                 Queue: {queueCount}
                             </span>
                         )}
 
-                        <div className={`hidden sm:flex items-center gap-2 text-[11px] font-mono tracking-[0.15em] uppercase px-3 py-1 rounded-full border transition-colors duration-500 ${isLightMode ? 'border-slate-200 bg-slate-100/80 text-slate-600' : 'border-cyan-900/50 bg-cyan-950/40 text-cyan-400/90'}`}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            Live Orchestration <span aria-hidden="true">&bull;</span> Autonomous
-                        </div>
+                        {/* Engine Switcher Toggle */}
+                        <button
+                            onClick={toggleEngine}
+                            disabled={isSwitchingEngine}
+                            title={engine === 'antigravity' ? 'Active Engine: Antigravity IDE Agent. Click to switch to Codex.' : 'Active Engine: Codex Brain Pool. Click to switch to Antigravity.'}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:opacity-50 active:scale-95 ${
+                                engine === 'antigravity'
+                                    ? (isLightMode ? 'border-purple-300 bg-purple-100 text-purple-900 shadow-sm' : 'border-purple-500/60 bg-purple-950/50 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.3)]')
+                                    : (isLightMode ? 'border-cyan-300 bg-cyan-50 text-cyan-900 shadow-sm' : 'border-cyan-700/60 bg-cyan-950/50 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.25)]')
+                            }`}
+                        >
+                            <span>{engine === 'antigravity' ? '✨ Antigravity' : '⚡ Codex'}</span>
+                        </button>
+
+                        {/* TTS Voice Toggle */}
+                        <button
+                            onClick={() => setTtsEnabled(!ttsEnabled)}
+                            title={ttsEnabled ? 'Voice Synthesis Active (Click to mute)' : 'Voice Synthesis Muted (Click to enable)'}
+                            className={`p-2 rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${
+                                ttsEnabled
+                                    ? (isLightMode ? 'border-emerald-300 bg-emerald-100 text-emerald-900 shadow-sm' : 'border-emerald-500/60 bg-emerald-950/50 text-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.3)]')
+                                    : (isLightMode ? 'border-slate-200 bg-slate-50 text-slate-400 hover:text-slate-600' : 'border-cyan-950/80 bg-cyan-950/20 text-cyan-700 hover:text-cyan-400')
+                            }`}
+                        >
+                            {ttsEnabled ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4 text-emerald-400">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-4.5l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
+                                </svg>
+                            )}
+                        </button>
+
                         <button
                             onClick={() => setIsLightMode(!isLightMode)}
                             aria-label={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
@@ -863,6 +998,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                         </button>
                     </div>
                 </header>
+
 
                 {/* Main Visualizer Area */}
                 <main className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden pt-[64px] lg:pt-[72px] pb-[32px] lg:pb-[40px] relative z-20">
@@ -1113,11 +1249,24 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                     : `${getBrainBgColor(msg.brain)} rounded-2xl rounded-bl-sm`
                                                     }`}>
                                                     {!isUser && (
-                                                        <div className={`flex items-baseline gap-2 mb-2 pb-1 border-b ${isLightMode ? 'border-slate-200/50' : 'border-cyan-900/50'}`}>
-                                                            <span className={`font-bold tracking-wider ${getBrainColor(msg.brain)}`}>[{msg.brain}]</span>
-                                                            <span className={`text-[9px] ${isLightMode ? 'text-slate-400' : 'text-cyan-800'}`}>{msg.time}</span>
+                                                        <div className={`flex items-baseline justify-between gap-2 mb-2 pb-1 border-b ${isLightMode ? 'border-slate-200/50' : 'border-cyan-900/50'}`}>
+                                                            <div className="flex items-baseline gap-2">
+                                                                <span className={`font-bold tracking-wider ${getBrainColor(msg.brain)}`}>[{msg.brain}]</span>
+                                                                <span className={`text-[9px] ${isLightMode ? 'text-slate-400' : 'text-cyan-800'}`}>{msg.time}</span>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => speakMessage(msg.brain, msg.text)}
+                                                                title={`Replay ${msg.brain}'s Voice`}
+                                                                className={`p-1 rounded transition-colors ${isLightMode ? 'hover:bg-slate-200 text-slate-500 hover:text-slate-800' : 'hover:bg-cyan-900/60 text-cyan-500 hover:text-cyan-200'}`}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-3.5 h-3.5">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
+                                                                </svg>
+                                                            </button>
                                                         </div>
                                                     )}
+
 
                                                     <div className={`font-sans tracking-normal flex flex-col gap-2 ${isUser ? (isLightMode ? 'text-slate-100' : 'text-cyan-50') : (isLightMode ? 'text-slate-700' : 'text-cyan-50')}`}>
                                                         <div className="flex-1 w-full overflow-hidden flex gap-2">

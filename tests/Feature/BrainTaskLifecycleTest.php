@@ -57,4 +57,25 @@ class BrainTaskLifecycleTest extends TestCase
             ->assertJsonPath('events.0.type', BrainTask::QUEUED)
             ->assertJsonMissing(['do-not-return']);
     }
+
+    public function test_engine_api_can_get_and_set_active_engine(): void
+    {
+        $this->getJson('/api/brain/engine')
+            ->assertOk()
+            ->assertJsonStructure(['engine']);
+
+        $this->postJson('/api/brain/engine', ['engine' => 'antigravity'])
+            ->assertOk()
+            ->assertJson(['engine' => 'antigravity', 'status' => 'success']);
+
+        $this->getJson('/api/brain/engine')
+            ->assertOk()
+            ->assertJson(['engine' => 'antigravity']);
+
+        // Toggle back to codex
+        $this->postJson('/api/brain/engine', ['engine' => 'codex'])
+            ->assertOk()
+            ->assertJson(['engine' => 'codex', 'status' => 'success']);
+    }
 }
+

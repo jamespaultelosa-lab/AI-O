@@ -352,6 +352,37 @@ class TaskDispatcherController extends Controller
         return response()->json($messageStore->recent());
     }
 
+    public function getEngine(): \Illuminate\Http\JsonResponse
+    {
+        $stateFile = $this->agentIpcPath('agent_state.json');
+        $engine = 'codex';
+        if (file_exists($stateFile)) {
+            $data = json_decode(file_get_contents($stateFile), true);
+            if (isset($data['active_engine'])) {
+                $engine = $data['active_engine'];
+            }
+        }
+        return response()->json(['engine' => $engine]);
+    }
+
+    public function setEngine(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'engine' => 'required|string|in:codex,antigravity',
+        ]);
+
+        $stateFile = $this->agentIpcPath('agent_state.json');
+        $state = [];
+        if (file_exists($stateFile)) {
+            $state = json_decode(file_get_contents($stateFile), true) ?: [];
+        }
+        $state['active_engine'] = $validated['engine'];
+        $state['updated_at'] = now()->toISOString();
+        file_put_contents($stateFile, json_encode($state, JSON_PRETTY_PRINT));
+
+        return response()->json(['engine' => $validated['engine'], 'status' => 'success']);
+    }
+
     private function agentIpcPath(string $filename): string
     {
         $directory = storage_path('app/agent_ipc');
@@ -362,3 +393,4 @@ class TaskDispatcherController extends Controller
         return $directory.DIRECTORY_SEPARATOR.$filename;
     }
 }
+

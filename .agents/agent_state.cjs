@@ -14,6 +14,7 @@ function defaultState() {
         recent_outcomes: [],
         brain_state: {},
         pending_goal: null,
+        active_engine: 'codex',
     };
 }
 
@@ -37,6 +38,17 @@ function saveState(state, file = STATE_FILE) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify(next, null, 2));
     return next;
+}
+
+function getActiveEngine(file = STATE_FILE) {
+    const state = loadState(file);
+    return state.active_engine || 'codex';
+}
+
+function setActiveEngine(engine, file = STATE_FILE) {
+    const state = loadState(file);
+    state.active_engine = engine === 'antigravity' ? 'antigravity' : 'codex';
+    return saveState(state, file);
 }
 
 function setPendingGoal({ originalTask, blockedBy, file = STATE_FILE }) {
@@ -101,7 +113,9 @@ function autonomyContext(brain, file = STATE_FILE) {
     const focus = state.focus?.status === 'active' ? state.focus.summary : null;
     const questions = state.open_questions.slice(0, 2);
     const pendingGoal = state.pending_goal;
+    const engine = state.active_engine || 'codex';
     const parts = [];
+    parts.push(`Active execution engine: ${engine}`);
     if (focus) parts.push(`Current durable focus: ${focus}`);
     if (pendingGoal && pendingGoal.status !== 'completed') {
         parts.push(`Chained pending goal: User originally wanted to "${pendingGoal.original_task}", but was blocked by "${pendingGoal.blocked_by}". Status: ${pendingGoal.status}.`);
@@ -116,12 +130,15 @@ module.exports = {
     autonomyContext,
     clearPendingGoal,
     defaultState,
+    getActiveEngine,
     getPendingGoal,
     loadState,
     recordDispatch,
     recordOutcome,
     safeSummary,
+    setActiveEngine,
     setPendingGoal,
     updatePendingGoalStatus,
 };
+
 

@@ -6,12 +6,15 @@ const { captureLearning, stripLearningDirective } = require('./vault_learning.cj
 const {
     autonomyContext,
     clearPendingGoal,
+    getActiveEngine,
     getPendingGoal,
     recordDispatch,
     recordOutcome,
+    setActiveEngine,
     setPendingGoal,
     updatePendingGoalStatus,
 } = require('./agent_state.cjs');
+
 
 function loadProjectEnvironment() {
 
@@ -258,6 +261,19 @@ function loadObsidianSkills(task) {
     return injectedSkills ? `\n\n[OBSIDIAN SKILLS INJECTED] Use the following learned skills for this task:${injectedSkills}` : '';
 }
 
+function loadBrainSubagentConfig(brain) {
+    const filename = `${String(brain || '').toLowerCase()}.agent.md`;
+    const subagentPath = path.resolve(__dirname, 'brains', filename);
+    if (fs.existsSync(subagentPath)) {
+        try {
+            return fs.readFileSync(subagentPath, 'utf8');
+        } catch {
+            return '';
+        }
+    }
+    return '';
+}
+
 function buildIdentity(brain, mode, task, projectRoot = AIO_PROJECT_ROOT, hasSelectedProject = false, durableContext = '') {
     const roles = {
         Architect: 'You reason about system boundaries, architecture, and data design.',
@@ -279,9 +295,12 @@ function buildIdentity(brain, mode, task, projectRoot = AIO_PROJECT_ROOT, hasSel
     const optionInstruction = 'When a material requirement is missing, an error/blocker occurs, or a task reaches a natural milestone, ask the user one concise clarifying question or proactively suggest the next action with interactive choice buttons in this exact format: [QUESTION: concise question][OPTIONS: Option A :: Option B]. If an error blocks a task (such as commit/push blocked by test failures), propose fixing it with options. When a fix is completed, suggest continuing the initial goal with options. Never assume a missing requirement. do not emit options for straightforward tasks.';
 
     const skillsContext = loadObsidianSkills(task);
+    const subagentConfig = loadBrainSubagentConfig(brain);
+    const subagentContext = subagentConfig ? `\n\n[SUBAGENT PERSONA & DIRECTIVES]\n${subagentConfig}\n` : '';
 
-    return `You are ${brain}, an FAIS Brains specialist. ${roles[brain]} Act as an independent collaborator, not a yes-person: state a clear recommendation, name material assumptions and trade-offs, and respectfully challenge a weak or risky premise. Ask one focused question only when it genuinely blocks a sound next step; otherwise make the best bounded recommendation. ${optionInstruction} ${selectionInstruction} ${durableContext}\nProject root: ${projectRoot}. Task: ${task}${skillsContext}\nFor substantive completed work only, and only when you can name concrete evidence, append one private line exactly in this form: [[VAULT_LEARNING: Observation: ... | Evidence: file, test, or incident | Rule: reusable practice]]. Never include credentials, tokens, personal data, or unverified claims.`;
+    return `You are ${brain}, an FAIS Brains specialist. ${roles[brain]} Act as an independent collaborator, not a yes-person: state a clear recommendation, name material assumptions and trade-offs, and respectfully challenge a weak or risky premise. Ask one focused question only when it genuinely blocks a sound next step; otherwise make the best bounded recommendation. ${optionInstruction} ${selectionInstruction} ${durableContext}\nProject root: ${projectRoot}. Task: ${task}${skillsContext}${subagentContext}\nFor substantive completed work only, and only when you can name concrete evidence, append one private line exactly in this form: [[VAULT_LEARNING: Observation: ... | Evidence: file, test, or incident | Rule: reusable practice]]. Never include credentials, tokens, personal data, or unverified claims.`;
 }
+
 
 
 function shouldAttemptSelfHeal(message) {
@@ -498,7 +517,9 @@ module.exports = {
     buildIdentity,
     cancelActiveTask,
     collaborationMessage,
+    getActiveEngine,
     isCollaborationOnlyRequest,
+    loadBrainSubagentConfig,
     loadCurrentBrief,
     openQuestionFromMessage,
     executionProfileFor,
@@ -509,8 +530,10 @@ module.exports = {
     resetSelectedProject,
     resolvedDecisionFromTask,
     routeTask,
+    setActiveEngine,
     shouldAttemptSelfHeal,
     taskWithDecisionContext,
     timeoutForRoute,
 };
+
 
