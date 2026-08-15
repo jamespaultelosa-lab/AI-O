@@ -51,8 +51,40 @@ four brain threads reply. Explicit aliases (`archi`/`architect`, `security`,
 `senior dev`, and `junior`) select the corresponding lead instead of falling
 through to the default Senior Dev route.
 
+### Proactive Suggestions & Stateful Goal Chaining
+
+FAIS Brains actively guide user workflow via structured option buttons in the
+format `[QUESTION: concise question][OPTIONS: Option A :: Option B]`.
+When a multi-step objective (such as committing and pushing changes) encounters
+failing tests, build errors, or merge conflicts, `agent_state.cjs` records a
+chained `pending_goal` with the original task and blocker. The lead brain diagnoses
+the failure and suggests a fix using interactive option buttons.
+Once the user chooses to fix the issue and the fix is resolved, the orchestrator
+automatically updates the goal state and prompts the brain to propose continuing
+the initial objective (e.g., commit & push). Unrelated tasks or explicit cancellation
+automatically clear the pending goal queue.
+
+### Autonomous Self-Healing Loop
+
+When an actionable turn encounters test failures, compiler/type errors, or build
+issues, `.agents/brain_orchestrator.cjs` invokes a bounded autonomous self-healing loop
+(up to 2 attempts). It broadcasts real-time `[AUTONOMY]` diagnostic updates to the UI,
+investigates root causes, applies fixes, and re-verifies. If resolved within 2 attempts,
+it announces the fix. If still failing after 2 attempts, it escalates to the user with
+interactive option buttons.
+
+### Visual Git Diff Viewer & Quick Actions Command Deck
+
+- **Visual Diff Viewer**: Messages containing `[DIFF: path\n```diff\n...\n```]` or
+  fenced diff code blocks render as interactive, collapsible syntax-highlighted cards
+  with line additions (`+`), deletions (`-`), file header badges, and copy capabilities.
+- **Quick Actions Command Deck**: A horizontal pill-button toolbar above the input
+  terminal provides 1-click execution for routine workflows: Pre-Push Audit & Commit,
+  Run Test Suite, Evolve Skills, Sync History, Security Scan, and Health Check.
 
 Project paths come from `.env`: `OBSIDIAN_VAULT_PATH` and
+
+
 `FAIS_PROJECT_ROOT`. The app-server and watcher restart when `composer run dev`
 is restarted; runtime IPC and PID files are not source-controlled.
 

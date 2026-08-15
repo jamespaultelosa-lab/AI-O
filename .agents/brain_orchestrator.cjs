@@ -3,9 +3,18 @@ const fs = require('fs');
 const path = require('path');
 const { cancelActiveTask: cancelPoolTask, queryBrain } = require('./codex_brain_pool.cjs');
 const { captureLearning, stripLearningDirective } = require('./vault_learning.cjs');
-const { autonomyContext, recordDispatch, recordOutcome } = require('./agent_state.cjs');
+const {
+    autonomyContext,
+    clearPendingGoal,
+    getPendingGoal,
+    recordDispatch,
+    recordOutcome,
+    setPendingGoal,
+    updatePendingGoalStatus,
+} = require('./agent_state.cjs');
 
 function loadProjectEnvironment() {
+
     const envFile = path.resolve(__dirname, '..', '.env');
     if (!fs.existsSync(envFile)) return;
 
@@ -160,12 +169,39 @@ function openQuestionFromMessage(message) {
 
 function taskWithDecisionContext(task) {
     const decision = resolvedDecisionFromTask(task);
+    const pendingGoal = getPendingGoal();
+    const taskText = String(task || '').trim();
+
     if (isCollaborationOnlyRequest(task)) {
         const brief = previousTask || loadCurrentBrief();
         return brief
             ? `Continue the current user brief below. The user asked the specialists to consult each other; do not replace the brief with that meta-request.\n\nCurrent brief: ${brief}`
             : 'The user asked the specialists to consult each other, but no prior brief is available. Ask what specific subject they want the team to review.';
     }
+
+    if (pendingGoal) {
+        // If user explicitly cancels or skips
+        if (/^(cancel|abort|skip|stop|dismiss)$/i.test(taskText) || (decision && /^(cancel|abort|skip|stop|dismiss)$/i.test(decision.answer))) {
+            clearPendingGoal();
+            return 'The user cancelled resuming the previous goal. Ask how you can assist with a new task.';
+        }
+
+        // If user chooses to continue with the pending goal
+        if ((decision && (/continue/i.test(decision.answer) || /proceed/i.test(decision.answer))) || (/^continue/i.test(taskText))) {
+            const originalGoal = pendingGoal.original_task;
+            clearPendingGoal();
+            previousTask = originalGoal;
+            saveCurrentBrief(originalGoal);
+            return `Previous blocker resolved. Resuming user's original task: ${originalGoal}`;
+        }
+
+        // If user chooses to fix the error / blocker
+        if ((decision && (/fix/i.test(decision.answer) || /fix/i.test(decision.question))) || /fix/i.test(taskText)) {
+            updatePendingGoalStatus('fixing');
+            return `Previous task: "${pendingGoal.original_task}" was blocked by: "${pendingGoal.blocked_by}". User action: Fix the issue. Diagnose and resolve this problem. Once resolved, proactively suggest continuing with "${pendingGoal.original_task}" using [QUESTION: Issue resolved. Ready to proceed with ${pendingGoal.original_task}?][OPTIONS: Continue with ${pendingGoal.original_task} :: Run verification :: Skip].`;
+        }
+    }
+
     if (!decision) {
         previousTask = String(task || '');
         saveCurrentBrief(previousTask);
@@ -240,10 +276,29 @@ function buildIdentity(brain, mode, task, projectRoot = AIO_PROJECT_ROOT, hasSel
     const selectionInstruction = hasSelectedProject
         ? 'Treat a selected follow-up action as authorized for that project; do not ask which repository to use again.'
         : 'If the task requires a repository-specific action, you MUST ask the user which repository to use by using the [OPTIONS: AI-O :: FAIS Payroll SRS :: Both] format. Do not answer this yourself.';
-    const optionInstruction = 'When a material requirement is missing, ask the user one concise clarifying question in this exact format: [QUESTION: concise question][OPTIONS: Option A :: Option B]. Never assume a missing requirement. do not emit options for straightforward tasks.';
+    const optionInstruction = 'When a material requirement is missing, an error/blocker occurs, or a task reaches a natural milestone, ask the user one concise clarifying question or proactively suggest the next action with interactive choice buttons in this exact format: [QUESTION: concise question][OPTIONS: Option A :: Option B]. If an error blocks a task (such as commit/push blocked by test failures), propose fixing it with options. When a fix is completed, suggest continuing the initial goal with options. Never assume a missing requirement. do not emit options for straightforward tasks.';
+
     const skillsContext = loadObsidianSkills(task);
 
     return `You are ${brain}, an FAIS Brains specialist. ${roles[brain]} Act as an independent collaborator, not a yes-person: state a clear recommendation, name material assumptions and trade-offs, and respectfully challenge a weak or risky premise. Ask one focused question only when it genuinely blocks a sound next step; otherwise make the best bounded recommendation. ${optionInstruction} ${selectionInstruction} ${durableContext}\nProject root: ${projectRoot}. Task: ${task}${skillsContext}\nFor substantive completed work only, and only when you can name concrete evidence, append one private line exactly in this form: [[VAULT_LEARNING: Observation: ... | Evidence: file, test, or incident | Rule: reusable practice]]. Never include credentials, tokens, personal data, or unverified claims.`;
+}
+
+
+function shouldAttemptSelfHeal(message) {
+    const text = String(message || '');
+    const errorSignals = [
+        /FAILURES!/i,
+        /Tests:\s*\d+\s*failed/i,
+        /failed asserting that/i,
+        /error TS\d+:/i,
+        /syntax error/i,
+        /uncaught exception/i,
+        /command exited with code [1-9]/i,
+        /build failed/i,
+        /fatal error/i,
+    ];
+    if (/\[OPTIONS:/i.test(text)) return false;
+    return errorSignals.some(regex => regex.test(text));
 }
 
 function sendWebhook(endpoint, payload) {
@@ -260,11 +315,12 @@ function sendWebhook(endpoint, payload) {
             resolve();
         });
         request.setTimeout(3000, () => { request.destroy(); resolve(); });
-        request.on('error', resolve);
+        request.on('error', () => resolve());
         request.write(body);
         request.end();
     });
 }
+
 
 function safeTaskId(taskId) {
     return typeof taskId === 'string' && taskId.trim().length > 0 ? taskId.trim() : null;
@@ -379,15 +435,46 @@ async function orchestrate(taskData, webhook = sendWebhook, runner = queryBrain)
         : `\nConsultant findings:\n${consultations.map(({ brain, finding }) => `${brain}: ${finding}`).join('\n')}`;
 
     try {
-        const rawMessage = await runBrain(route.lead, `${buildIdentity(route.lead, 'actionable', task, projectRoot, hasSelectedProject, durableContext)}${consultationContext}\nBefore responding, privately check whether the recommendation remains safe, evidence-based, and aligned with the durable focus. Return the single user-facing response.`);
+        let rawMessage = await runBrain(route.lead, `${buildIdentity(route.lead, 'actionable', task, projectRoot, hasSelectedProject, durableContext)}${consultationContext}\nBefore responding, privately check whether the recommendation remains safe, evidence-based, and aligned with the durable focus. Return the single user-facing response.`);
         captureLearning(route.lead, rawMessage);
-        const message = stripLearningDirective(rawMessage);
+        let message = stripLearningDirective(rawMessage);
+
+        // Bounded Autonomous Self-Healing Loop (up to 2 retry attempts)
+        if (shouldAttemptSelfHeal(message) && !activeTask?.cancelled) {
+            let autoHealAttempts = 0;
+            const maxAutoHealAttempts = 2;
+
+            while (autoHealAttempts < maxAutoHealAttempts && shouldAttemptSelfHeal(message) && !activeTask?.cancelled) {
+                autoHealAttempts++;
+                await webhook('brain-message', messagePayload(route.lead, `[AUTONOMY] 🔧 Detected failure. Initiating autonomous self-heal (attempt ${autoHealAttempts}/${maxAutoHealAttempts})...`));
+                await reportTaskLifecycle(webhook, taskId, 'running', `Self-Healing (${autoHealAttempts}/${maxAutoHealAttempts})`, route.lead);
+
+                const healPrompt = `Autonomous Self-Healing Loop (Attempt ${autoHealAttempts}/${maxAutoHealAttempts}):\nPrevious action resulted in an error/failure:\n\n${message}\n\nTask: ${task}\nInvestigate the root cause, apply necessary fixes, and re-verify. If fixed, announce resolution clearly. If still unresolvable, explain why and suggest next steps with options.`;
+                
+                rawMessage = await runBrain(route.lead, `${buildIdentity(route.lead, 'actionable', healPrompt, projectRoot, hasSelectedProject, durableContext)}\nReturn the single user-facing response.`);
+                captureLearning(route.lead, rawMessage);
+                message = stripLearningDirective(rawMessage);
+            }
+
+            if (shouldAttemptSelfHeal(message) && !/\[OPTIONS:/i.test(message)) {
+                message += '\n\n[QUESTION: Autonomous self-heal reached attempt limit (2/2). How should we proceed?][OPTIONS: Fix manually :: Review error logs :: Dismiss]';
+            }
+        }
+
+        const currentPendingGoal = getPendingGoal();
+        if (currentPendingGoal && currentPendingGoal.status === 'fixing' && (/resolved|fixed|repaired|complete|done/i.test(message))) {
+            updatePendingGoalStatus('ready_to_resume');
+        } else if (/commit|push|deploy/i.test(displayTask || transportTask) && /fail|error|block|prevent|problem/i.test(message) && /fix|repair/i.test(message)) {
+            setPendingGoal({ originalTask: displayTask || transportTask, blockedBy: openQuestionFromMessage(message) || 'Pre-push verification issue' });
+        }
+
         await webhook('brain-message', messagePayload(route.lead, message));
         await webhook('brain-status', { brain: route.lead, status: 'idle' });
         await reportTaskLifecycle(webhook, taskId, 'completed', 'Completed', route.lead, 'Task response delivered.');
         activeTask = null;
         recordOutcome({ taskId, status: 'completed', summary: 'Lead response delivered.', openQuestion: openQuestionFromMessage(message) });
         return [{ brain: route.lead, message }];
+
     } catch (error) {
         console.error(`[BRAIN ORCHESTRATOR] ${route.lead} failed: ${error.message}`);
         await webhook('brain-status', { brain: route.lead, status: 'idle' });
@@ -422,6 +509,8 @@ module.exports = {
     resetSelectedProject,
     resolvedDecisionFromTask,
     routeTask,
+    shouldAttemptSelfHeal,
     taskWithDecisionContext,
     timeoutForRoute,
 };
+

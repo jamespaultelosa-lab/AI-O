@@ -1,15 +1,15 @@
 {
     "version": 1,
-    "exported_at": "2026-08-15T13:53:53+00:00",
+    "exported_at": "2026-08-15T14:22:29+00:00",
     "conversations_count": 1,
-    "messages_count": 603,
+    "messages_count": 634,
     "conversations": [
         {
             "id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
             "title": "History",
             "is_history": true,
             "created_at": "2026-08-15T13:26:27+00:00",
-            "updated_at": "2026-08-15T13:53:53+00:00"
+            "updated_at": "2026-08-15T14:22:29+00:00"
         }
     ],
     "messages": [
@@ -4836,6 +4836,254 @@
             "message": "Thinking...",
             "created_at": "2026-08-15T13:53:53+00:00",
             "updated_at": "2026-08-15T13:53:53+00:00"
+        },
+        {
+            "id": 604,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "SYSTEM",
+            "message": "Command failed: ---\r\n---\r\nSelect-Object : Cannot bind parameter 'Index'. Cannot convert value \"1...",
+            "created_at": "2026-08-15T13:54:07+00:00",
+            "updated_at": "2026-08-15T13:54:07+00:00"
+        },
+        {
+            "id": 605,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "Still working on the current task (over one minute). You can safely choose Stop to cancel it.",
+            "created_at": "2026-08-15T13:54:51+00:00",
+            "updated_at": "2026-08-15T13:54:51+00:00"
+        },
+        {
+            "id": 606,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "Committed and pushed `996027b` to `origin/feature/brain-history-sync`.\n\nValidation passed: focused sync tests (4/24) and whitespace checks. The working tree is clean.",
+            "created_at": "2026-08-15T13:54:52+00:00",
+            "updated_at": "2026-08-15T13:54:52+00:00"
+        },
+        {
+            "id": 607,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "USER",
+            "message": "Check system processes, queue status, and orchestrator health",
+            "created_at": "2026-08-15T14:13:10+00:00",
+            "updated_at": "2026-08-15T14:13:10+00:00"
+        },
+        {
+            "id": 608,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "SYSTEM",
+            "message": "[AUTONOMY] Team focus is retained; independent review and bounded follow-up tracking are active.",
+            "created_at": "2026-08-15T14:13:10+00:00",
+            "updated_at": "2026-08-15T14:13:10+00:00"
+        },
+        {
+            "id": 609,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "Thinking...",
+            "created_at": "2026-08-15T14:13:13+00:00",
+            "updated_at": "2026-08-15T14:13:13+00:00"
+        },
+        {
+            "id": 610,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "**Health: degraded.**  \n\n- **Queue:** 19 failed `App\\Events\\BrainStatusChanged` jobs are present (all dated 2026-08-09); no running process was identified as a Laravel `queue:work` or `queue:listen` worker. Do **not** bulk-retry them until the original failure is inspected—replaying stale status events can create misleading state.\n- **Orchestrator:** the bounded self-heal logic is present and has correctly stopped after 2 attempts. The unresolved self-heal prompt needs a manual root-cause review rather than increasing retries.\n- **Runtime:** Laravel is reachable in local mode with maintenance off, but debug mode is enabled—acceptable for development, not a deployable production posture.\n- **Recommendation:** inspect one failed job’s exception and its dependency chain first, then decide whether to retry, discard stale events, or repair the worker/configuration path.",
+            "created_at": "2026-08-15T14:13:50+00:00",
+            "updated_at": "2026-08-15T14:13:50+00:00"
+        },
+        {
+            "id": 611,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "USER",
+            "message": "/evolve-skills",
+            "created_at": "2026-08-15T14:17:19+00:00",
+            "updated_at": "2026-08-15T14:17:19+00:00"
+        },
+        {
+            "id": 612,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "Initiating FAIS Brains Manual Evolution sequence...",
+            "created_at": "2026-08-15T14:17:20+00:00",
+            "updated_at": "2026-08-15T14:17:20+00:00"
+        },
+        {
+            "id": 613,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Architect",
+            "message": "Starting FAIS Brains Manual Evolution Sequence...",
+            "created_at": "2026-08-15T14:17:20+00:00",
+            "updated_at": "2026-08-15T14:17:20+00:00"
+        },
+        {
+            "id": 614,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "Harvesting daily experiences and mistakes from the Memory Vault...",
+            "created_at": "2026-08-15T14:17:24+00:00",
+            "updated_at": "2026-08-15T14:17:24+00:00"
+        },
+        {
+            "id": 615,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Architect",
+            "message": "Loaded 200 recent memories for mining.",
+            "created_at": "2026-08-15T14:17:28+00:00",
+            "updated_at": "2026-08-15T14:17:28+00:00"
+        },
+        {
+            "id": 616,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Architect",
+            "message": "Mining the following recent friction points for rule improvements:",
+            "created_at": "2026-08-15T14:17:31+00:00",
+            "updated_at": "2026-08-15T14:17:31+00:00"
+        },
+        {
+            "id": 617,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "Simulating LLM SkillOpt consolidation and replay into Obsidian Markdown...",
+            "created_at": "2026-08-15T14:17:35+00:00",
+            "updated_at": "2026-08-15T14:17:35+00:00"
+        },
+        {
+            "id": 618,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "[DONE] Evolution complete! Created a new Obsidian skill file at Docs/Skills/React_UI_Contrast.md. Diff is ready for your manual review before commit.",
+            "created_at": "2026-08-15T14:17:41+00:00",
+            "updated_at": "2026-08-15T14:17:41+00:00"
+        },
+        {
+            "id": 619,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "USER",
+            "message": "Sync Thought Stream history with git repository",
+            "created_at": "2026-08-15T14:17:49+00:00",
+            "updated_at": "2026-08-15T14:17:49+00:00"
+        },
+        {
+            "id": 620,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "SYSTEM",
+            "message": "[AUTONOMY] Team focus is retained; independent review and bounded follow-up tracking are active.",
+            "created_at": "2026-08-15T14:17:49+00:00",
+            "updated_at": "2026-08-15T14:17:49+00:00"
+        },
+        {
+            "id": 621,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "Thinking...",
+            "created_at": "2026-08-15T14:17:52+00:00",
+            "updated_at": "2026-08-15T14:17:52+00:00"
+        },
+        {
+            "id": 622,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "Thought Stream sync completed: imported 0 new records and exported 1 conversation with 621 messages.\n\n`database/brain_history.json` changed, alongside unrelated existing modifications; I recommend keeping the history update separate from those edits in any follow-up commit.",
+            "created_at": "2026-08-15T14:18:02+00:00",
+            "updated_at": "2026-08-15T14:18:02+00:00"
+        },
+        {
+            "id": 623,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "USER",
+            "message": "Run pre-push verification audit and commit changes",
+            "created_at": "2026-08-15T14:18:13+00:00",
+            "updated_at": "2026-08-15T14:18:13+00:00"
+        },
+        {
+            "id": 624,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "SYSTEM",
+            "message": "[AUTONOMY] Team focus is retained; independent review and bounded follow-up tracking are active.",
+            "created_at": "2026-08-15T14:18:13+00:00",
+            "updated_at": "2026-08-15T14:18:13+00:00"
+        },
+        {
+            "id": 625,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "Thinking...",
+            "created_at": "2026-08-15T14:18:15+00:00",
+            "updated_at": "2026-08-15T14:18:15+00:00"
+        },
+        {
+            "id": 626,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "REJECTED for commit in its current state: whitespace validation fails in `.agents` orchestration files and `JarvisUI.tsx`, and the pending self-healing/UI work is not clearly scoped to the existing history-sync branch. Keeping unrelated changes on that branch would make review and rollback needlessly risky.  \n[QUESTION: Where should the pending self-healing/UI/history changes be committed after the audit is fixed?][OPTIONS: Dedicated feature branch :: Existing feature/brain-history-sync branch]",
+            "created_at": "2026-08-15T14:18:29+00:00",
+            "updated_at": "2026-08-15T14:18:29+00:00"
+        },
+        {
+            "id": 627,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "USER",
+            "message": "Where should the pending self-healing/UI/history changes be committed after the audit is fixed?: Existing feature/brain-history-sync branch",
+            "created_at": "2026-08-15T14:19:58+00:00",
+            "updated_at": "2026-08-15T14:19:58+00:00"
+        },
+        {
+            "id": 628,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "SYSTEM",
+            "message": "[AUTONOMY] Team focus is retained; independent review and bounded follow-up tracking are active.",
+            "created_at": "2026-08-15T14:19:59+00:00",
+            "updated_at": "2026-08-15T14:19:59+00:00"
+        },
+        {
+            "id": 629,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "SYSTEM",
+            "message": "[COLLABORATION] Junior_Dev is consulting Senior_Dev in parallel.",
+            "created_at": "2026-08-15T14:19:59+00:00",
+            "updated_at": "2026-08-15T14:19:59+00:00"
+        },
+        {
+            "id": 630,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "Thinking...",
+            "created_at": "2026-08-15T14:20:02+00:00",
+            "updated_at": "2026-08-15T14:20:02+00:00"
+        },
+        {
+            "id": 631,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "[Consultation finding] - Keep the selected branch, but split commits by concern: orchestrator/self-healing, UI quick actions, documentation, and generated history. Mixed commits will weaken review and rollback safety.\n- Clear every `git diff --check` failure before committing; then run the Node orchestration tests, focused self-healing tests, and frontend production build.\n- Review `brain_history.json` for transient test fixtures, sensitive conversation content, and unnecessary churn before staging it. Generated history should never be accepted blindly.\n- Do not raise the self-heal retry limit. Validate terminal-state handling and manual recovery after attempt 2; additional retries risk loops, duplicate side effects, and hidden failures.",
+            "created_at": "2026-08-15T14:20:06+00:00",
+            "updated_at": "2026-08-15T14:20:06+00:00"
+        },
+        {
+            "id": 632,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Junior_Dev",
+            "message": "Thinking...",
+            "created_at": "2026-08-15T14:20:10+00:00",
+            "updated_at": "2026-08-15T14:20:10+00:00"
+        },
+        {
+            "id": 633,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Junior_Dev",
+            "message": "Still working on the current task (over one minute). You can safely choose Stop to cancel it.",
+            "created_at": "2026-08-15T14:21:07+00:00",
+            "updated_at": "2026-08-15T14:21:07+00:00"
+        },
+        {
+            "id": 634,
+            "brain_conversation_id": "d2afedb4-12c2-4bc7-9898-ee2cea5da408",
+            "brain": "Senior_Dev",
+            "message": "[Senior_Dev]: Task cancellation recorded.",
+            "created_at": "2026-08-15T14:22:29+00:00",
+            "updated_at": "2026-08-15T14:22:29+00:00"
         }
     ]
 }

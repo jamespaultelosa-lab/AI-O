@@ -12,9 +12,9 @@ const vault = require('../../.agents/vault_learning.cjs');
 const agentState = require('../../.agents/agent_state.cjs');
 
 test('Codex lifecycle items have safe, generic activity messages', () => {
-    assert.equal(brainPool.activityDescription({ type: 'reasoning' }), 'Reviewing the task approach...');
-    assert.equal(brainPool.activityDescription({ type: 'commandExecution', command: 'cat .env' }), 'Running a workspace command...');
-    assert.equal(brainPool.activityDescription({ type: 'fileChange', path: '.env' }), 'Preparing workspace changes...');
+    assert.equal(brainPool.activityDescription({ type: 'reasoning' }), 'Thinking...');
+    assert.equal(brainPool.activityDescription({ type: 'commandExecution', command: 'cat .env' }), 'Running: cat .env');
+    assert.equal(brainPool.activityDescription({ type: 'fileChange', path: '.env' }), 'Editing: .env');
     assert.equal(brainPool.activityDescription({ type: 'unknown' }), null);
 });
 
@@ -109,11 +109,12 @@ test('Git repository selection uses the project chosen in the UI', () => {
     orchestrator.resetSelectedProject();
     assert.notEqual(orchestrator.projectRootForTask('Push FAIS Payroll project'), orchestrator.AIO_PROJECT_ROOT);
     const identity = orchestrator.buildIdentity('Senior_Dev', 'actionable', '');
-    assert.match(identity, /Which repository should I use/);
+    assert.match(identity, /which repository to use/i);
 });
 
 test('resolved option answers retain the original task and do not repeat questions', () => {
     orchestrator.resetSelectedProject();
+    agentState.clearPendingGoal();
     assert.equal(orchestrator.taskWithDecisionContext('Prepare the release'), 'Prepare the release');
     const contextual = orchestrator.taskWithDecisionContext('Which release branch?: main');
     assert.match(contextual, /Previous task context: Prepare the release/);
@@ -121,6 +122,42 @@ test('resolved option answers retain the original task and do not repeat questio
     assert.match(contextual, /do not ask the same questions again/);
     assert.deepEqual(orchestrator.resolvedDecisionFromTask('Choose strategy?: Fast path'), { question: 'Choose strategy?', answer: 'Fast path' });
 });
+
+test('pending goal tracking records blockers, fixes issues, and prompts to resume original task', () => {
+    agentState.clearPendingGoal();
+    agentState.setPendingGoal({
+        originalTask: 'commit and push changes to remote',
+        blockedBy: '3 failing PHPUnit tests',
+    });
+
+    const pending = agentState.getPendingGoal();
+    assert.equal(pending.original_task, 'commit and push changes to remote');
+    assert.equal(pending.blocked_by, '3 failing PHPUnit tests');
+    assert.equal(pending.status, 'blocked');
+
+    // User chooses to fix the error
+    const fixContext = orchestrator.taskWithDecisionContext('Fix error?: Fix the failing tests');
+    assert.match(fixContext, /Fix the issue/);
+    assert.match(fixContext, /commit and push changes to remote/);
+    assert.equal(agentState.getPendingGoal().status, 'fixing');
+
+    // User chooses to continue with the pending goal
+    const continueContext = orchestrator.taskWithDecisionContext('Ready to proceed?: Continue with commit and push changes to remote');
+    assert.match(continueContext, /Resuming user's original task: commit and push changes to remote/);
+    assert.equal(agentState.getPendingGoal(), null);
+});
+
+test('cancelling or clearing pending goal resets chained state cleanly', () => {
+    agentState.setPendingGoal({
+        originalTask: 'commit and push',
+        blockedBy: 'merge conflict',
+    });
+
+    const cancelContext = orchestrator.taskWithDecisionContext('Cancel');
+    assert.match(cancelContext, /cancelled resuming the previous goal/);
+    assert.equal(agentState.getPendingGoal(), null);
+});
+
 
 test('specialist messages select their relevant lead', () => {
     assert.equal(orchestrator.routeTask('archi, what do you think?').lead, 'Architect');

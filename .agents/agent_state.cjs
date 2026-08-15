@@ -13,6 +13,7 @@ function defaultState() {
         open_questions: [],
         recent_outcomes: [],
         brain_state: {},
+        pending_goal: null,
     };
 }
 
@@ -36,6 +37,39 @@ function saveState(state, file = STATE_FILE) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify(next, null, 2));
     return next;
+}
+
+function setPendingGoal({ originalTask, blockedBy, file = STATE_FILE }) {
+    const state = loadState(file);
+    state.pending_goal = {
+        original_task: safeSummary(originalTask),
+        blocked_by: safeSummary(blockedBy),
+        status: 'blocked',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    };
+    return saveState(state, file);
+}
+
+function getPendingGoal(file = STATE_FILE) {
+    const state = loadState(file);
+    return state.pending_goal || null;
+}
+
+function clearPendingGoal(file = STATE_FILE) {
+    const state = loadState(file);
+    state.pending_goal = null;
+    return saveState(state, file);
+}
+
+function updatePendingGoalStatus(status, file = STATE_FILE) {
+    const state = loadState(file);
+    if (state.pending_goal) {
+        state.pending_goal.status = status;
+        state.pending_goal.updated_at = new Date().toISOString();
+        return saveState(state, file);
+    }
+    return state;
 }
 
 function recordDispatch({ taskId = null, task, route, file = STATE_FILE }) {
@@ -66,11 +100,28 @@ function autonomyContext(brain, file = STATE_FILE) {
     const state = loadState(file);
     const focus = state.focus?.status === 'active' ? state.focus.summary : null;
     const questions = state.open_questions.slice(0, 2);
+    const pendingGoal = state.pending_goal;
     const parts = [];
     if (focus) parts.push(`Current durable focus: ${focus}`);
+    if (pendingGoal && pendingGoal.status !== 'completed') {
+        parts.push(`Chained pending goal: User originally wanted to "${pendingGoal.original_task}", but was blocked by "${pendingGoal.blocked_by}". Status: ${pendingGoal.status}.`);
+    }
     if (questions.length) parts.push(`Unresolved user questions: ${questions.join(' | ')}`);
     parts.push(`You are ${brain}; maintain continuity, but do not invent memories or claim consciousness.`);
     return parts.join('\n');
 }
 
-module.exports = { STATE_FILE, autonomyContext, defaultState, loadState, recordDispatch, recordOutcome, safeSummary };
+module.exports = {
+    STATE_FILE,
+    autonomyContext,
+    clearPendingGoal,
+    defaultState,
+    getPendingGoal,
+    loadState,
+    recordDispatch,
+    recordOutcome,
+    safeSummary,
+    setPendingGoal,
+    updatePendingGoalStatus,
+};
+

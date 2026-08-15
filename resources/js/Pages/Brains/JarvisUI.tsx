@@ -179,7 +179,139 @@ interface MemoryEntry {
     severity: string;
 }
 
+interface DiffBlock {
+    filePath?: string;
+    additions: number;
+    deletions: number;
+    content: string;
+}
+
+const extractDiffBlocks = (text: string): { textWithoutDiffs: string, diffBlocks: DiffBlock[] } => {
+    const diffBlocks: DiffBlock[] = [];
+    
+    // Parse [DIFF: filepath\n```diff\n...\n```] or [DIFF: filepath]```diff\n...\n```
+    const explicitDiffPattern = /\[DIFF:\s*([^\n\]]+)\]\s*```(?:diff)?\s*([\s\S]*?)```/gi;
+    let cleanText = text.replace(explicitDiffPattern, (_, path, content) => {
+        const lines = content.split('\n');
+        let additions = 0;
+        let deletions = 0;
+        lines.forEach((l: string) => {
+            if (l.startsWith('+') && !l.startsWith('+++')) additions++;
+            if (l.startsWith('-') && !l.startsWith('---')) deletions++;
+        });
+        diffBlocks.push({ filePath: path.trim(), additions, deletions, content: content.trim() });
+        return '';
+    });
+
+    // Parse standalone ```diff\n...\n``` blocks
+    const fencedDiffPattern = /```diff\s*([\s\S]*?)```/gi;
+    cleanText = cleanText.replace(fencedDiffPattern, (_, content) => {
+        const lines = content.split('\n');
+        let additions = 0;
+        let deletions = 0;
+        let detectedPath = '';
+        lines.forEach((l: string) => {
+            if (l.startsWith('+++ b/') || l.startsWith('+++ ')) detectedPath = l.replace(/^\+\+\+\s+(?:b\/)?/, '').trim();
+            if (l.startsWith('+') && !l.startsWith('+++')) additions++;
+            if (l.startsWith('-') && !l.startsWith('---')) deletions++;
+        });
+        diffBlocks.push({ filePath: detectedPath || 'File Changes', additions, deletions, content: content.trim() });
+        return '';
+    });
+
+    return { textWithoutDiffs: cleanText.trim(), diffBlocks };
+};
+
+const DiffCard = ({ diff, isLightMode = false }: { diff: DiffBlock, isLightMode?: boolean }) => {
+    const [isExpanded, setIsExpanded] = useState(true);
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(diff.content);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div className={`mt-2 rounded-xl border overflow-hidden transition-all ${
+            isLightMode 
+                ? 'bg-slate-50 border-slate-200 shadow-sm' 
+                : 'bg-black/40 border-cyan-900/60 shadow-[0_4px_20px_rgba(0,0,0,0.4)]'
+        }`}>
+            <div 
+                onClick={() => setIsExpanded(!isExpanded)}
+                className={`flex items-center justify-between px-3 py-2 cursor-pointer select-none border-b text-[11px] font-mono ${
+                    isLightMode 
+                        ? 'bg-slate-100/80 border-slate-200 text-slate-700 hover:bg-slate-200/50' 
+                        : 'bg-cyan-950/40 border-cyan-900/40 text-cyan-200 hover:bg-cyan-900/30'
+                }`}
+            >
+                <div className="flex items-center gap-2 overflow-hidden">
+                    <svg className="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span className="font-bold truncate">{diff.filePath || 'File Changes'}</span>
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                        {diff.additions > 0 && <span className="text-emerald-400">+{diff.additions}</span>}
+                        {diff.deletions > 0 && <span className="text-rose-400">-{diff.deletions}</span>}
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button 
+                        type="button" 
+                        onClick={handleCopy}
+                        className={`px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold transition-all ${
+                            isLightMode ? 'hover:bg-slate-200 text-slate-600' : 'hover:bg-cyan-800/50 text-cyan-300'
+                        }`}
+                        title="Copy diff"
+                    >
+                        {copied ? 'Copied' : 'Copy'}
+                    </button>
+                    <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
+            </div>
+            {isExpanded && (
+                <div className="max-h-72 overflow-y-auto p-2.5 font-mono text-[10.5px] leading-5 space-y-0.5 scrollbar-thin scrollbar-thumb-cyan-900/50">
+                    {diff.content.split('\n').map((line, lineIdx) => {
+                        const isAddition = line.startsWith('+') && !line.startsWith('+++');
+                        const isDeletion = line.startsWith('-') && !line.startsWith('---');
+                        const isHeader = line.startsWith('@@') || line.startsWith('diff --git');
+
+                        let lineClass = isLightMode ? 'text-slate-600' : 'text-cyan-100/70';
+                        if (isAddition) {
+                            lineClass = isLightMode ? 'bg-emerald-100/80 text-emerald-900 font-semibold px-1 rounded-sm' : 'bg-emerald-950/40 text-emerald-300 font-semibold px-1 rounded-sm';
+                        } else if (isDeletion) {
+                            lineClass = isLightMode ? 'bg-rose-100/80 text-rose-900 font-semibold px-1 rounded-sm' : 'bg-rose-950/40 text-rose-300 font-semibold px-1 rounded-sm';
+                        } else if (isHeader) {
+                            lineClass = isLightMode ? 'text-indigo-600 font-bold bg-indigo-50/50 px-1' : 'text-indigo-300 font-bold bg-indigo-950/30 px-1';
+                        }
+
+                        return (
+                            <div key={lineIdx} className={`whitespace-pre overflow-x-auto ${lineClass}`}>
+                                {line || ' '}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const QUICK_ACTIONS = [
+    { label: 'Pre-Push & Commit', icon: '🚀', prompt: 'Run pre-push verification audit and commit changes', description: 'Run CI pre-flight and prepare commit' },
+    { label: 'Run Test Suite', icon: '🧪', prompt: 'Run all PHPUnit and Node test suites and report results', description: 'Execute full testing suite' },
+    { label: 'Evolve Skills', icon: '🧬', prompt: '/evolve-skills', description: 'Trigger autonomous skill evolution' },
+    { label: 'Sync History', icon: '🔄', prompt: 'Sync Thought Stream history with git repository', description: 'Sync chat history across devices' },
+    { label: 'Security Audit', icon: '🛡️', prompt: 'Perform security and permissions audit on active codebase', description: 'Run zero-trust security scan' },
+    { label: 'Health Check', icon: '🩺', prompt: 'Check system processes, queue status, and orchestrator health', description: 'Check system health and status' },
+];
+
 export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
+
     const [brains, setBrains] = useState(initialBrains);
     const [messages, setMessages] = useState<{ id: number, brain: string, text: string, time: string }[]>([]);
 
@@ -900,6 +1032,9 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                     )}
                                     {messages.slice(-visibleCount).map((msg) => {
                                         let cleanText = msg.text.replace('[DONE] ', '');
+                                        const { textWithoutDiffs, diffBlocks } = extractDiffBlocks(cleanText);
+                                        cleanText = textWithoutDiffs;
+
                                         let optionGroups: { question?: string, options: string[] }[] = [];
                                         const approvalMatch = cleanText.match(/\[APPROVAL:([a-z0-9-]+)\]/i);
                                         const approvalId = approvalMatch?.[1];
@@ -939,7 +1074,8 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                         const isBackgroundActivity = (BACKGROUND_ACTIVITY_MESSAGES.has(cleanText) || isCollaborationActivity || isAutonomyActivity)
                                             && !approvalId
                                             && optionGroups.length === 0
-                                            && imageList.length === 0;
+                                            && imageList.length === 0
+                                            && diffBlocks.length === 0;
 
                                         if (isBackgroundActivity || isSystemMessage) {
                                             return (
@@ -1000,6 +1136,14 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                                 {isUser ? parseMarkdownBold(cleanText, isLightMode) : <TypingMessage text={cleanText} isLightMode={isLightMode} />}
                                                             </div>
                                                         </div>
+
+                                                        {diffBlocks.length > 0 && (
+                                                            <div className="mt-1 space-y-2">
+                                                                {diffBlocks.map((diff, diffIdx) => (
+                                                                    <DiffCard key={diffIdx} diff={diff} isLightMode={isLightMode} />
+                                                                ))}
+                                                            </div>
+                                                        )}
 
                                                         {imageList.length > 0 && (
                                                             <div className="mt-1 flex flex-wrap gap-2">
@@ -1145,6 +1289,28 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                 className="hidden"
                             />
 
+                            {/* Quick Actions Command Deck */}
+                            <div className="flex items-center gap-1.5 overflow-x-auto pb-2.5 mb-1 scrollbar-none select-none">
+                                <span className={`text-[9px] font-bold uppercase tracking-wider px-1 shrink-0 ${isLightMode ? 'text-slate-400' : 'text-cyan-700'}`}>Deck:</span>
+                                {QUICK_ACTIONS.map((action, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => dispatchTask(action.prompt)}
+                                        disabled={isSubmitting}
+                                        title={action.description}
+                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96] border shrink-0 ${
+                                            isLightMode 
+                                                ? 'bg-white border-slate-200 text-slate-700 hover:text-cyan-800 hover:border-cyan-400 hover:bg-cyan-50/50 shadow-sm'
+                                                : 'bg-cyan-950/30 border-cyan-900/50 text-cyan-300 hover:text-cyan-100 hover:border-cyan-400/80 hover:bg-cyan-900/40 hover:shadow-[0_0_12px_rgba(34,211,238,0.25)]'
+                                        }`}
+                                    >
+                                        <span className="text-xs">{action.icon}</span>
+                                        <span>{action.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+
                             {/* Thumbnail Preview Pills */}
                             {attachedImages.length > 0 && (
                                 <div className={`flex flex-wrap gap-2 mb-2 p-2 rounded-lg border ${isLightMode ? 'border-slate-200 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]' : 'border-cyan-900/40 bg-cyan-950/30'}`}>
@@ -1158,7 +1324,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                                 className="w-4 h-4 rounded-full bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center text-[10px] font-bold transition-all cursor-pointer"
                                                 title="Remove Image"
                                             >
-                                                Ãƒâ€”
+                                                ×
                                             </button>
                                         </div>
                                     ))}
