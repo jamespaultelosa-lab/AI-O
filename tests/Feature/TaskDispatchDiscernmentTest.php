@@ -50,7 +50,7 @@ class TaskDispatchDiscernmentTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_hello_uses_casual_response_without_ipc_side_effects(): void
+    public function test_hello_dispatches_to_brain_pipeline(): void
     {
         Event::fake();
 
@@ -58,20 +58,15 @@ class TaskDispatchDiscernmentTest extends TestCase
 
         $response->assertOk()->assertJson([
             'status' => 'success',
-            'mode' => 'casual',
+            'mode' => 'actionable',
             'task' => 'hello',
-            'queue_position' => 0,
+            'queue_position' => 1,
         ]);
-        $this->assertSame([], json_decode(file_get_contents($this->queueFile), true));
-        $this->assertFileDoesNotExist($this->pendingFile);
+        $queue = json_decode(file_get_contents($this->queueFile), true);
+        $this->assertCount(1, $queue);
+        $this->assertSame('hello', $queue[0]['display_task']);
+        $this->assertFileExists($this->pendingFile);
         $this->assertDatabaseHas('brain_messages', ['brain' => 'USER', 'message' => 'hello']);
-        $this->assertDatabaseHas('brain_messages', [
-            'brain' => 'Architect',
-            'message' => 'Hello! How can I help?',
-        ]);
-        Event::assertDispatched(BrainMessageBroadcast::class, function ($event): bool {
-            return $event->brainName === 'Architect' && $event->message === 'Hello! How can I help?';
-        });
     }
 
     public function test_make_a_new_button_uses_the_actionable_queue_and_watcher_payload(): void
@@ -124,6 +119,8 @@ class TaskDispatchDiscernmentTest extends TestCase
     {
         $classifier = app(TaskIntentDiscernment::class);
 
+        // The classifier still categorizes for metadata, but the controller
+        // no longer short-circuits on casual — everything goes to the brain.
         $cases = [
             'hello' => TaskIntentDiscernment::CASUAL,
             "  HELLO! \n" => TaskIntentDiscernment::CASUAL,
@@ -139,7 +136,7 @@ class TaskDispatchDiscernmentTest extends TestCase
         }
     }
 
-    public function test_both_dispatch_routes_return_casual_mode_without_ipc_side_effects(): void
+    public function test_both_dispatch_routes_send_greetings_to_brain_pipeline(): void
     {
         Event::fake();
         $this->withoutMiddleware();
@@ -149,11 +146,12 @@ class TaskDispatchDiscernmentTest extends TestCase
 
             $response->assertOk()->assertJson([
                 'status' => 'success',
-                'mode' => 'casual',
-                'queue_position' => 0,
+                'mode' => 'actionable',
+                'queue_position' => 1,
             ]);
-            $this->assertSame([], json_decode(file_get_contents($this->queueFile), true));
-            $this->assertFileDoesNotExist($this->pendingFile);
+            $queue = json_decode(file_get_contents($this->queueFile), true);
+            $this->assertCount(1, $queue);
+            $this->assertFileExists($this->pendingFile);
 
             file_put_contents($this->queueFile, json_encode([]));
             @unlink($this->pendingFile);

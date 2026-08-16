@@ -4,14 +4,28 @@
 
 `composer run dev` starts Laravel, the queue worker, Vite, Reverb, and
 `.agents/task_watcher.cjs`. The watcher consumes task IPC files from
-`storage/app/agent_ipc`, routes work through `.agents/brain_orchestrator.cjs`,
-and delegates model turns to `.agents/codex_brain_pool.cjs`.
+`storage/app/agent_ipc` and delegates work to the modular Brain Kernel
+(`.agents/core/kernel.cjs`).
 
-The pool owns one long-lived `codex app-server --stdio` process and one durable
-Codex thread per brain (`Architect`, `Security`, `Senior_Dev`, and
-`Junior_Dev`). Normal tasks use one lead brain; heavy multi-domain tasks use up
-to three sequential consultants followed by one lead synthesis. The abort IPC
-signal interrupts active turns without stopping the watcher.
+### Layered Modular Subsystem Architecture
+
+The `.agents/` orchestration engine is structured into decoupled, single-responsibility layers:
+1. **Core Subsystem (`.agents/core/`)**:
+   - `kernel.cjs`: Central lifecycle orchestrator managing task intake, casual fastpaths, DAG execution, and state persistence.
+   - `event_bus.cjs`: Decoupled asynchronous event dispatcher broadcasting real-time thought streams, stage updates, and lifecycle milestones.
+   - `state_machine.cjs`: Enforces valid task transitions (`queued → planning → executing_node → reviewing → completed|failed|cancelled`) and secret sanitization.
+2. **Registry Subsystem (`.agents/registry/`)**:
+   - `brain_registry.cjs`: Manifest-driven persona discovery scanning `.agents/brains/*.agent.md` dynamically with YAML frontmatter parsing.
+   - `skill_registry.cjs`: Discovers and indexes tools and skills from `.agents/skills/`.
+3. **DAG (Task Graph) Subsystem (`.agents/dag/`)**:
+   - `task_graph.cjs`: In-memory DAG representation with dependency tracking and topological traversal.
+   - `graph_planner.cjs`: Decomposes actionable requests into dynamic multi-node execution graphs.
+   - `graph_executor.cjs`: Traverses DAG nodes in dependency order, invoking assigned brains and managing handoffs.
+4. **Adapters Subsystem (`.agents/adapters/`)**:
+   - `codex_pool_adapter.cjs`: Wraps the long-lived Codex Brain Pool (`.agents/codex_brain_pool.cjs`) and OpenAI runner.
+   - `storage_adapter.cjs`: Encapsulates atomic IPC file operations (`pending_task.json`, `current_brief.json`) and speaking locks.
+5. **Backward Compatibility Facades**:
+   - `brain_orchestrator.cjs`, `speak.cjs`, `stream_thoughts.js`, and `finish_task.js` provide seamless facade shims delegating to the modular kernel.
 
 ### Prompt Transport Boundary
 

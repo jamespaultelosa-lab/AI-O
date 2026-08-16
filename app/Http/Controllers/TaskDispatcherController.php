@@ -77,22 +77,8 @@ class TaskDispatcherController extends Controller
         $conversationId = $validated['conversation_id'] ?? $messageStore->historyConversation()->id;
         $this->validateImageInputs($rawImages);
 
-        $intent = $intentDiscernment->decide($displayTask);
-        $isGroupAddress = preg_match('/\b(guys|everyone|team|bois|brains|all)\b/ui', $displayTask) === 1;
-        if ($intent === TaskIntentDiscernment::CASUAL && ! $isGroupAddress && count($rawImages) === 0) {
-            $messageStore->record('USER', $displayTask, $conversationId);
-
-            $casualResponse = 'Hello! How can I help?';
-            $responseMessage = $messageStore->record('Architect', $casualResponse, $conversationId);
-            event(new BrainMessageBroadcast('Architect', $casualResponse, $responseMessage?->brain_conversation_id ?? $conversationId));
-
-            return response()->json([
-                'status' => 'success',
-                'mode' => TaskIntentDiscernment::CASUAL,
-                'task' => $displayTask,
-                'queue_position' => 0,
-            ]);
-        }
+        // All input flows through the brain orchestration pipeline.
+        // The brain decides how to respond — no hardcoded intercepts.
 
         if (trim(strtolower($displayTask)) === '/evolve-skills') {
             $messageStore->record('USER', $displayTask, $conversationId);
@@ -383,6 +369,34 @@ class TaskDispatcherController extends Controller
         return response()->json(['engine' => $validated['engine'], 'status' => 'success']);
     }
 
+    public function getMemories(): \Illuminate\Http\JsonResponse
+    {
+        $memoryFile = storage_path('app/memory/mistakes_log.json');
+        $memories = [];
+        if (file_exists($memoryFile)) {
+            $data = json_decode(file_get_contents($memoryFile), true);
+            if (is_array($data)) {
+                $memories = array_map(function ($item) {
+                    return [
+                        'id' => $item['id'] ?? 'MST-000',
+                        'title' => $item['task'] ?? 'Task Review',
+                        'severity' => $item['severity'] ?? 'HIGH',
+                        'what_happened' => $item['error'] ?? '',
+                        'root_cause' => $item['root_cause'] ?? '',
+                        'lesson' => $item['lesson'] ?? '',
+                        'fix' => $item['fix'] ?? '',
+                        'brain' => $item['brain'] ?? 'Senior_Dev',
+                        'timestamp' => $item['timestamp'] ?? now()->toIso8601String(),
+                    ];
+                }, $data);
+            }
+        }
+        return response()->json([
+            'status' => 'success',
+            'memories' => $memories,
+        ]);
+    }
+
     private function agentIpcPath(string $filename): string
     {
         $directory = storage_path('app/agent_ipc');
@@ -393,4 +407,3 @@ class TaskDispatcherController extends Controller
         return $directory.DIRECTORY_SEPARATOR.$filename;
     }
 }
-

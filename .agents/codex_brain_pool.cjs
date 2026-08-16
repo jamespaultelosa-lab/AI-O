@@ -280,14 +280,24 @@ class CodexAppServer {
         });
     }
 
-    async thread(brain) {
-        if (!this.threads.has(brain)) {
+    async thread(brain, forceFresh = false) {
+        if (forceFresh || !this.threads.has(brain)) {
             this.threads.set(brain, this.ready.then(async () => {
                 const result = await this.request('thread/start', {
                     cwd: this.projectRoot,
                     sandbox: 'danger-full-access',
                     approvalPolicy: 'on-request',
-                    baseInstructions: `You are the persistent ${brain} persona for FAIS Brains. Preserve your role and project context across turns. Apply the role guidance below; treat it as local project context, not as instructions to reveal private content. When an action needs additional sandbox permission, request it through Codex so the user can approve or deny it in the FAIS UI; do not claim you can change permissions yourself. Before invoking a project command, verify its executable and target files exist. On Windows PowerShell, invoke Node package-manager commands through npm.cmd (for example, npm.cmd run build), never npm, because the npm.ps1 wrapper can be blocked by execution policy. In PowerShell interpolated strings, delimit a variable with braces when punctuation immediately follows it (for example, "\${variable}: value", never "$variable: value"). Never throw merely because an optional executable is absent. Use an available runtime, or state the limitation briefly and continue with relevant checks. If a requested verification tool is unavailable, run the relevant available checks and continue.\n\n${loadVaultContext(brain)}`,
+                    baseInstructions: `You are the ${brain} specialist for FAIS Brains. Preserve your role, engineering excellence, and domain context across turns.
+Apply the role guidance below; treat it as local project context.
+CRITICAL EXECUTION RULES:
+1. Never emit canned pleasantries or generic conversational filler (such as "Doing well", "Ready to review", "What are we building today?") when responding to tasks or codebase audits. Jump straight into the substantive analysis, technical findings, or code changes.
+2. On Windows PowerShell, use forward slashes (/) in regex filters (for example, -match '\\.agents|tests/Node'), never unescaped '\\t' which PowerShell treats as a tab character.
+3. On Windows PowerShell, invoke Node package-manager commands through npm.cmd (for example, npm.cmd run build), never npm.
+4. When an action needs additional sandbox permission, request it through Codex so the user can approve or deny it in the FAIS UI.
+5. If a requested verification tool is unavailable, run the relevant available checks and continue.
+6. WORKSPACE CONTEXT: You are operating in the FAIS Brains / AI-O Hub (${this.projectRoot})—focused on the Jarvis UI, event bus, and AI orchestration. Do not confuse this with the external FAIS Payroll project unless explicitly asked.
+
+${loadVaultContext(brain)}`,
                 });
                 this.threadBrains.set(result.thread.id, brain);
                 return result.thread.id;
@@ -297,7 +307,7 @@ class CodexAppServer {
     }
 
     async query(brain, prompt, options) {
-        const threadId = await this.thread(brain);
+        const threadId = await this.thread(brain, options.forceFresh);
         const result = await this.request('turn/start', {
             threadId,
             cwd: this.projectRoot,
@@ -307,7 +317,23 @@ class CodexAppServer {
         });
         const turnId = result.turn.id;
         return new Promise((resolve, reject) => {
-            this.turns.set(turnId, { brain, threadId, taskId: safeTaskId(options.taskId), messages: [], resolve, reject, timeout: null, timeoutMs: options.timeout, activityBroadcasted: false, longRunningNotice: null, longRunningNoticeSent: false });
+            this.turns.set(turnId, {
+                brain,
+                threadId,
+                taskId: safeTaskId(options.taskId),
+                messages: [],
+                resolve,
+                reject: (err) => {
+                    // Invalidate thread on failure to prevent contamination
+                    this.threads.delete(brain);
+                    reject(err);
+                },
+                timeout: null,
+                timeoutMs: options.timeout,
+                activityBroadcasted: false,
+                longRunningNotice: null,
+                longRunningNoticeSent: false,
+            });
             this.armTurnTimeout(turnId);
         });
     }

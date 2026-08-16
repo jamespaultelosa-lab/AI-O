@@ -64,3 +64,23 @@ Plans:
 - [ ] 04-01-PLAN.md — Deterministic active-chat identity, accessible native controls, and intrinsic responsive header hierarchy.
 
 ---
+
+## Phase 5: Modular Brain Architecture & Dynamic DAG Engine
+
+**Goal:** Refactor the brain orchestration system into a layered modular architecture featuring manifest-driven persona auto-discovery, dynamic DAG task execution, decoupled event streaming, and backward-compatible execution adapters.
+**Requirements:**
+
+- MOD-01
+- MOD-02
+- MOD-03
+- MOD-04
+- MOD-05
+
+**Depends on:** Phase 4
+**Plans:** 1 plan
+
+Plans:
+
+- [ ] 05-01-PLAN.md — Core Kernel & Event Bus decoupling, Brain Registry with manifest discovery, Dynamic DAG Planner & Executor, and Codex Pool Adapter.
+
+---

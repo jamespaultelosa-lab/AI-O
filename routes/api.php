@@ -25,6 +25,7 @@ Route::get('/brain/tasks', [BrainTaskController::class, 'index']);
 Route::get('/brain/tasks/{taskId}', [BrainTaskController::class, 'show']);
 Route::post('/brain/tasks/{taskId}/cancel', [TaskDispatcherController::class, 'abortTask']);
 Route::post('/brain/cancel', [TaskDispatcherController::class, 'abortTask']);
+Route::get('/brain/memory', [TaskDispatcherController::class, 'getMemories']);
 
 Route::post('/webhook/task-lifecycle', function (Request $request, BrainTaskStore $taskStore) {
     $validated = $request->validate([

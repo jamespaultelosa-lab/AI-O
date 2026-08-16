@@ -188,7 +188,7 @@ interface DiffBlock {
 
 const extractDiffBlocks = (text: string): { textWithoutDiffs: string, diffBlocks: DiffBlock[] } => {
     const diffBlocks: DiffBlock[] = [];
-    
+
     // Parse [DIFF: filepath\n```diff\n...\n```] or [DIFF: filepath]```diff\n...\n```
     const explicitDiffPattern = /\[DIFF:\s*([^\n\]]+)\]\s*```(?:diff)?\s*([\s\S]*?)```/gi;
     let cleanText = text.replace(explicitDiffPattern, (_, path, content) => {
@@ -234,18 +234,16 @@ const DiffCard = ({ diff, isLightMode = false }: { diff: DiffBlock, isLightMode?
     };
 
     return (
-        <div className={`mt-2 rounded-xl border overflow-hidden transition-all ${
-            isLightMode 
-                ? 'bg-slate-50 border-slate-200 shadow-sm' 
-                : 'bg-black/40 border-cyan-900/60 shadow-[0_4px_20px_rgba(0,0,0,0.4)]'
-        }`}>
-            <div 
+        <div className={`mt-2 rounded-xl border overflow-hidden transition-all ${isLightMode
+            ? 'bg-slate-50 border-slate-200 shadow-sm'
+            : 'bg-black/40 border-cyan-900/60 shadow-[0_4px_20px_rgba(0,0,0,0.4)]'
+            }`}>
+            <div
                 onClick={() => setIsExpanded(!isExpanded)}
-                className={`flex items-center justify-between px-3 py-2 cursor-pointer select-none border-b text-[11px] font-mono ${
-                    isLightMode 
-                        ? 'bg-slate-100/80 border-slate-200 text-slate-700 hover:bg-slate-200/50' 
-                        : 'bg-cyan-950/40 border-cyan-900/40 text-cyan-200 hover:bg-cyan-900/30'
-                }`}
+                className={`flex items-center justify-between px-3 py-2 cursor-pointer select-none border-b text-[11px] font-mono ${isLightMode
+                    ? 'bg-slate-100/80 border-slate-200 text-slate-700 hover:bg-slate-200/50'
+                    : 'bg-cyan-950/40 border-cyan-900/40 text-cyan-200 hover:bg-cyan-900/30'
+                    }`}
             >
                 <div className="flex items-center gap-2 overflow-hidden">
                     <svg className="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,12 +256,11 @@ const DiffCard = ({ diff, isLightMode = false }: { diff: DiffBlock, isLightMode?
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         onClick={handleCopy}
-                        className={`px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold transition-all ${
-                            isLightMode ? 'hover:bg-slate-200 text-slate-600' : 'hover:bg-cyan-800/50 text-cyan-300'
-                        }`}
+                        className={`px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold transition-all ${isLightMode ? 'hover:bg-slate-200 text-slate-600' : 'hover:bg-cyan-800/50 text-cyan-300'
+                            }`}
                         title="Copy diff"
                     >
                         {copied ? 'Copied' : 'Copy'}
@@ -302,7 +299,7 @@ const DiffCard = ({ diff, isLightMode = false }: { diff: DiffBlock, isLightMode?
 };
 
 const QUICK_ACTIONS = [
-    { label: 'Pre-Push & Commit', icon: '🚀', prompt: 'Run pre-push verification audit and commit changes', description: 'Run CI pre-flight and prepare commit' },
+    { label: 'Pre-Push & Commit', icon: '🚀', prompt: 'commit changes', description: 'commit changes' },
     { label: 'Run Test Suite', icon: '🧪', prompt: 'Run all PHPUnit and Node test suites and report results', description: 'Execute full testing suite' },
     { label: 'Evolve Skills', icon: '🧬', prompt: '/evolve-skills', description: 'Trigger autonomous skill evolution' },
     { label: 'Sync History', icon: '🔄', prompt: 'Sync Thought Stream history with git repository', description: 'Sync chat history across devices' },
@@ -367,7 +364,7 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                     setEngine(res.data.engine);
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
     }, []);
 
     const toggleEngine = async () => {
@@ -1078,11 +1075,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                             onClick={toggleEngine}
                             disabled={isSwitchingEngine}
                             title={engine === 'antigravity' ? 'Active Engine: Antigravity IDE Agent. Click to switch to Codex.' : 'Active Engine: Codex Brain Pool. Click to switch to Antigravity.'}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:opacity-50 active:scale-95 ${
-                                engine === 'antigravity'
-                                    ? (isLightMode ? 'border-purple-300 bg-purple-100 text-purple-900 shadow-sm' : 'border-purple-500/60 bg-purple-950/50 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.3)]')
-                                    : (isLightMode ? 'border-cyan-300 bg-cyan-50 text-cyan-900 shadow-sm' : 'border-cyan-700/60 bg-cyan-950/50 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.25)]')
-                            }`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:opacity-50 active:scale-95 ${engine === 'antigravity'
+                                ? (isLightMode ? 'border-purple-300 bg-purple-100 text-purple-900 shadow-sm' : 'border-purple-500/60 bg-purple-950/50 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.3)]')
+                                : (isLightMode ? 'border-cyan-300 bg-cyan-50 text-cyan-900 shadow-sm' : 'border-cyan-700/60 bg-cyan-950/50 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.25)]')
+                                }`}
                         >
                             <span>{engine === 'antigravity' ? '✨ Antigravity' : '⚡ Codex'}</span>
                         </button>
@@ -1091,11 +1087,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                         <button
                             onClick={() => setTtsEnabled(!ttsEnabled)}
                             title={ttsEnabled ? 'Voice Synthesis Active (Click to mute)' : 'Voice Synthesis Muted (Click to enable)'}
-                            className={`p-2 rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${
-                                ttsEnabled
-                                    ? (isLightMode ? 'border-emerald-300 bg-emerald-100 text-emerald-900 shadow-sm' : 'border-emerald-500/60 bg-emerald-950/50 text-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.3)]')
-                                    : (isLightMode ? 'border-slate-200 bg-slate-50 text-slate-400 hover:text-slate-600' : 'border-cyan-950/80 bg-cyan-950/20 text-cyan-700 hover:text-cyan-400')
-                            }`}
+                            className={`p-2 rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${ttsEnabled
+                                ? (isLightMode ? 'border-emerald-300 bg-emerald-100 text-emerald-900 shadow-sm' : 'border-emerald-500/60 bg-emerald-950/50 text-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.3)]')
+                                : (isLightMode ? 'border-slate-200 bg-slate-50 text-slate-400 hover:text-slate-600' : 'border-cyan-950/80 bg-cyan-950/20 text-cyan-700 hover:text-cyan-400')
+                                }`}
                         >
                             {ttsEnabled ? (
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-4 h-4 text-emerald-400">
@@ -1564,11 +1559,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                     scrollToBottom('smooth');
                                 }}
                                 aria-label="Scroll to latest thoughts"
-                                className={`absolute bottom-52 sm:bottom-48 right-6 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg transition-all transform hover:scale-105 active:scale-95 animate-bounce cursor-pointer ${
-                                    isLightMode
-                                        ? 'bg-slate-900 text-white shadow-slate-900/25 hover:bg-slate-800'
-                                        : 'bg-cyan-400 text-cyan-950 shadow-[0_0_15px_rgba(34,211,238,0.5)] hover:bg-cyan-300'
-                                }`}
+                                className={`absolute bottom-52 sm:bottom-48 right-6 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg transition-all transform hover:scale-105 active:scale-95 animate-bounce cursor-pointer ${isLightMode
+                                    ? 'bg-slate-900 text-white shadow-slate-900/25 hover:bg-slate-800'
+                                    : 'bg-cyan-400 text-cyan-950 shadow-[0_0_15px_rgba(34,211,238,0.5)] hover:bg-cyan-300'
+                                    }`}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -1599,11 +1593,10 @@ export default function JarvisUI({ brains: initialBrains }: JarvisUIProps) {
                                         onClick={() => dispatchTask(action.prompt)}
                                         disabled={isSubmitting}
                                         title={action.description}
-                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96] border shrink-0 ${
-                                            isLightMode 
-                                                ? 'bg-white border-slate-200 text-slate-700 hover:text-cyan-800 hover:border-cyan-400 hover:bg-cyan-50/50 shadow-sm'
-                                                : 'bg-cyan-950/30 border-cyan-900/50 text-cyan-300 hover:text-cyan-100 hover:border-cyan-400/80 hover:bg-cyan-900/40 hover:shadow-[0_0_12px_rgba(34,211,238,0.25)]'
-                                        }`}
+                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96] border shrink-0 ${isLightMode
+                                            ? 'bg-white border-slate-200 text-slate-700 hover:text-cyan-800 hover:border-cyan-400 hover:bg-cyan-50/50 shadow-sm'
+                                            : 'bg-cyan-950/30 border-cyan-900/50 text-cyan-300 hover:text-cyan-100 hover:border-cyan-400/80 hover:bg-cyan-900/40 hover:shadow-[0_0_12px_rgba(34,211,238,0.25)]'
+                                            }`}
                                     >
                                         <span className="text-xs">{action.icon}</span>
                                         <span>{action.label}</span>

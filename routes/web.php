@@ -11,6 +11,7 @@ Route::get('/task-queue', [\App\Http\Controllers\TaskDispatcherController::class
 Route::get('/history', [\App\Http\Controllers\TaskDispatcherController::class, 'getHistory']);
 Route::get('/api/brain/engine', [\App\Http\Controllers\TaskDispatcherController::class, 'getEngine']);
 Route::post('/api/brain/engine', [\App\Http\Controllers\TaskDispatcherController::class, 'setEngine']);
+Route::get('/api/brain/memory', [\App\Http\Controllers\TaskDispatcherController::class, 'getMemories']);
 
 Route::get('/dashboard', function () {
     return \Inertia\Inertia::render('Dashboard');
